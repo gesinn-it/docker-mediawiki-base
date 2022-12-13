@@ -1,0 +1,62 @@
+name: CI to Docker Hub
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        mediawiki_version: [1.35]
+        variant: [apache]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Retrieve MediaWiki version
+        run: |
+          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION//p')" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          driver-opts: network=host
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          file: ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile
+          network: host
+          allow: network.host
+          build-args: |
+             CACHEBUST=${{ steps.date.outputs.date }}
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ env.TAG_NAME }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
