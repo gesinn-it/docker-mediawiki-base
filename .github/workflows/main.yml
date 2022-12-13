@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: [1.35]
+        mediawiki_version: [1.35, 1.38, 1.39]
         variant: [apache]
 
     steps:
