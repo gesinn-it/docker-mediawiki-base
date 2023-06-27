@@ -33,7 +33,7 @@ jobs:
           
       - name: echo vars
         run: |
-          echo "mw version ${{matrix.mediawiki.key}} with php ${{matrix.mediawiki.versions.}} and default ${{matrix.mediawiki.default}}"
+          echo "mw version ${{matrix.mediawiki.key}} with php ${{matrix.version}} and default ${{matrix.mediawiki.default}}"
     
       # - name: Retrieve MediaWiki version
       #   run: |
