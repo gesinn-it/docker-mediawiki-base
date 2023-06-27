@@ -58,7 +58,7 @@ jobs:
 
 
       - name: set baseimagename
-        run: echo "baseImageName=baseImageName=gesinn/docker-mediawiki-base-${{ matrix.variant }}" >> $GITHUB_OUTPUT
+        run: echo "baseImageName=baseImageName=gesinn/docker-mediawiki-base-${{ matrix.variant }}" >> $GITHUB_ENV
 
       - name: generate tags for image
         run: |
@@ -68,7 +68,7 @@ jobs:
             TAGS='["${{ env.baseImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}}","${{ env.baseImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"]'
           fi
           echo $TAGS
-          echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
+          echo "TAGS=$TAGS" >> $GITHUB_ENV
 
       - name: Retrieve MediaWiki version into github environment, for later tagging of image
         run: echo "${{ env.TAGS }}"
