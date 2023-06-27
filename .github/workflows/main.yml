@@ -24,18 +24,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run update.sh / generate Dockerfiles
+      - name: Generate dockerfile
         run: |
-          chmod +x update.sh
-          ./update.sh
+          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.variant}}
           
       - name: echo vars
         run: |
           echo "mw version ${{matrix.mediawiki_version}} with php ${{matrix.php_version}} and default php ${{matrix.php_default}}"
     
-      # - name: Retrieve MediaWiki version
-      #   run: |
-      #     echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.php_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
+      - name: Retrieve MediaWiki version into github environment, for later tagging of image
+        run: |
+          echo "MEDIAWIKI_FULL_VERSION=$(cat ./Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
@@ -57,19 +56,36 @@ jobs:
       #     username: ${{ secrets.DOCKER_HUB_USERNAME }}
       #     password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+
+      - name: generate tags for image
+        id: gen_tags
+        run: |
+          baseImageName = gesinn/docker-mediawiki-base-${{ matrix.variant }}
+
+          if [[ ${{matrix.php_version}} == ${{matrix.php_default}}  ]]; then
+            TAGS='["${baseImageName}:${{ env.MEDIAWIKI_FULL_VERSION}}","${baseImageName}:${{ matrix.mediawiki_version}}", "${baseImageName}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}}","${baseImageName}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"]'
+          else
+            TAGS='["${baseImageName}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}}","${baseImageName}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"]'
+          fi
+          echo '::set-output name=tags::'$TAGS
+
+      - name: Retrieve MediaWiki version into github environment, for later tagging of image
+        run: |
+          echo ${{ steps.gen_tags.outputs.tags }}
+
       # - name: Build and push
       #   id: docker_build
       #   uses: docker/build-push-action@v4
       #   with:
       #     context: ./
-      #     file: ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile
+      #     file: ./Dockerfile
       #     network: host
       #     allow: network.host
       #     build-args: |
       #        CACHEBUST=${{ steps.date.outputs.date }}
       #     builder: ${{ steps.buildx.outputs.name }}
       #     push: true
-      #     tags: gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ env.TAG_NAME }}
+      #     tags: ${{ steps.gen_tags.outputs.tags }}
       #     cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
       #     cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
 
