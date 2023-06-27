@@ -51,10 +51,10 @@ jobs:
             ${{ runner.os }}-buildx-
 
 
-      # - uses: docker/login-action@v2
-      #   with:
-      #     username: ${{ secrets.DOCKER_HUB_USERNAME }}
-      #     password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
 
       - name: set baseimagename
@@ -73,21 +73,21 @@ jobs:
       - name: Retrieve MediaWiki version into github environment, for later tagging of image
         run: echo "${{ env.TAGS }}"
 
-      # - name: Build and push
-      #   id: docker_build
-      #   uses: docker/build-push-action@v4
-      #   with:
-      #     context: ./
-      #     file: ./Dockerfile
-      #     network: host
-      #     allow: network.host
-      #     build-args: |
-      #        CACHEBUST=${{ steps.date.outputs.date }}
-      #     builder: ${{ steps.buildx.outputs.name }}
-      #     push: true
-      #     tags: ${{ env.TAGS }}
-      #     cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
-      #     cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v4
+        with:
+          context: ./
+          file: ./Dockerfile
+          network: host
+          allow: network.host
+          build-args: |
+             CACHEBUST=${{ steps.date.outputs.date }}
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: ${{ env.TAGS }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
 
-      # - name: Image digest
-      #   run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
