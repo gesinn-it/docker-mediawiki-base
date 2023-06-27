@@ -41,7 +41,11 @@ jobs:
         run: |
           chmod +x update.sh
           ./update.sh
-
+          
+      - name: echo vars
+        run: |
+          echo "mw version ${{matrix.mediawiki}} with php ${{matrix.mediawiki.versions}} and default ${{matrix.mediawiki.default}}
+     
       # - name: Retrieve MediaWiki version
       #   run: |
       #     echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.php_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
@@ -59,6 +63,7 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+
 
       # - uses: docker/login-action@v2
       #   with:
