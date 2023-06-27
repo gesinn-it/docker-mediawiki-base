@@ -3,17 +3,18 @@ set -euo pipefail
 
 cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
-mediawikiReleases=( "$@" )
-if [ ${#mediawikiReleases[@]} -eq 0 ]; then
-	mediawikiReleases=( 1.*/ )
-fi
-mediawikiReleases=( "${mediawikiReleases[@]%/}" )
+# mediawikiReleases=( "$@" )
+# if [ ${#mediawikiReleases[@]} -eq 0 ]; then
+# 	mediawikiReleases=( 1.*/ )
+# fi
+# mediawikiReleases=( "${mediawikiReleases[@]%/}" )
 
-declare -A phpVersion=(
-	[default]='8.1'
-	[1.38]='7.4'
-	[1.35]='7.4'
-)
+declare -A phpMatrix
+#phpVersion[default]='8.1'
+# phpMatrix[1.39]='8.0;8.1'
+# phpMatrix[1.38]='7.4'
+# phpMatrix[1.35]='7.4'
+
 
 declare -A peclVersions=(
 	[APCu]="5.1.21"
@@ -43,27 +44,37 @@ declare -A variantBases=(
 	[fpm-alpine]='alpine'
 )
 
+# read mediawiki versions from images.yaml
+readarray -t mediawikiReleases < <(yq eval '.[] | keys | .[]' images.yaml)
+
+
+
 for mediawikiRelease in "${mediawikiReleases[@]}"; do
-	mediawikiReleaseDir="$mediawikiRelease"
+	mediawikiReleaseDir=latest/"$mediawikiRelease"
 	mediawikiVersion="$(mediawiki_version $mediawikiRelease)"
-	phpVersion=${phpVersion[$mediawikiRelease]-${phpVersion[default]}}
 
-	for variant in apache fpm fpm-alpine; do
-		dir="$mediawikiReleaseDir/$variant"
-		mkdir -p "$dir"
+    readarray -t php_versions < <(yq eval ".mediawiki.\"${mediawikiRelease}\".versions | .[]" images.yaml)
 
-		extras="${variantExtras[$variant]}"
-		cmd="${variantCmds[$variant]}"
-		base="${variantBases[$variant]}"
+	for phpVersion in "${php_versions[@]}"; do
+		echo "$mediawikiRelease-$phpVersion"
 
-		sed -r \
-			-e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
-			-e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$mediawikiRelease"'!g' \
-			-e 's!%%PHP_VERSION%%!'"$phpVersion"'!g' \
-			-e 's!%%VARIANT%%!'"$variant"'!g' \
-			-e 's!%%APCU_VERSION%%!'"${peclVersions[APCu]}"'!g' \
-			-e 's@%%VARIANT_EXTRAS%%@'"$extras"'@g' \
-			-e 's!%%CMD%%!'"$cmd"'!g' \
-			"Dockerfile-${base}.template" > "$dir/Dockerfile"
+		for variant in apache fpm fpm-alpine; do
+			dir="$mediawikiReleaseDir/$phpVersion/$variant"
+			mkdir -p "$dir"
+
+			extras="${variantExtras[$variant]}"
+			cmd="${variantCmds[$variant]}"
+			base="${variantBases[$variant]}"
+
+			sed -r \
+				-e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
+				-e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$mediawikiRelease"'!g' \
+				-e 's!%%PHP_VERSION%%!'"$phpVersion"'!g' \
+				-e 's!%%VARIANT%%!'"$variant"'!g' \
+				-e 's!%%APCU_VERSION%%!'"${peclVersions[APCu]}"'!g' \
+				-e 's@%%VARIANT_EXTRAS%%@'"$extras"'@g' \
+				-e 's!%%CMD%%!'"$cmd"'!g' \
+				"Dockerfile-${base}.template" > "$dir/Dockerfile"
+		done
 	done
 done

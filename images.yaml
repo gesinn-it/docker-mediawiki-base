@@ -1,0 +1,19 @@
+mediawiki:
+  "1.39":
+    default: 8.1
+    versions:
+      - 7.4
+      - 8.0
+      - 8.1
+  "1.38":
+    default: 7.4
+    versions:
+      - 7.4
+      - 8.0
+      - 8.1
+  "1.35":
+    default: 7.4
+    versions:
+      - 7.4
+      - 8.0
+      - 8.1

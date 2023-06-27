@@ -12,16 +12,39 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: [1.35, 1.38, 1.39]
+        mediawiki:
+          - '1.39':
+            default: '8.1'
+            versions:
+              - '7.4'
+              - '8.0'
+              - '8.1'
+          - '1.38':
+            default: '7.4'
+            versions:
+              - '7.4'
+              - '8.0'
+              - '8.1'
+          - '1.35':
+            default: '7.4'
+            versions:
+              - '7.4'
+              - '8.0'
+              - '8.1'
         variant: [apache]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Retrieve MediaWiki version
+      - name: Run update.sh / generate Dockerfiles
         run: |
-          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
+          chmod +x update.sh
+          ./update.sh
+
+      # - name: Retrieve MediaWiki version
+      #   run: |
+      #     echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.php_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
@@ -37,26 +60,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      # - uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKER_HUB_USERNAME }}
+      #     password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v4
-        with:
-          context: ./
-          file: ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile
-          network: host
-          allow: network.host
-          build-args: |
-             CACHEBUST=${{ steps.date.outputs.date }}
-          builder: ${{ steps.buildx.outputs.name }}
-          push: true
-          tags: gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ env.TAG_NAME }}
-          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
-          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+      # - name: Build and push
+      #   id: docker_build
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: ./
+      #     file: ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile
+      #     network: host
+      #     allow: network.host
+      #     build-args: |
+      #        CACHEBUST=${{ steps.date.outputs.date }}
+      #     builder: ${{ steps.buildx.outputs.name }}
+      #     push: true
+      #     tags: gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ env.TAG_NAME }}
+      #     cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+      #     cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+      # - name: Image digest
+      #   run: echo ${{ steps.docker_build.outputs.digest }}
