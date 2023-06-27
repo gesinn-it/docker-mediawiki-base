@@ -70,7 +70,7 @@ jobs:
           echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
 
       - name: Retrieve MediaWiki version into github environment, for later tagging of image
-        run: ${{ env.TAGS }}
+        run: echo ${{ env.TAGS }}
 
       # - name: Build and push
       #   id: docker_build
