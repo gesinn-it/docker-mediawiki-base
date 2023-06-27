@@ -60,7 +60,7 @@ jobs:
       - name: generate tags for image
         id: gen_tags
         run: |
-          baseImageName = gesinn/docker-mediawiki-base-${{ matrix.variant }}
+          baseImageName=gesinn/docker-mediawiki-base-${{ matrix.variant }}
 
           if [[ ${{matrix.php_version}} == ${{matrix.php_default}}  ]]; then
             TAGS='["${baseImageName}:${{ env.MEDIAWIKI_FULL_VERSION}}","${baseImageName}:${{ matrix.mediawiki_version}}", "${baseImageName}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}}","${baseImageName}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"]'
