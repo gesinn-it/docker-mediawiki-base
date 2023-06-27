@@ -15,22 +15,11 @@ jobs:
         mediawiki:
           - '1.39':
             default: '8.1'
-            versions:
-              - '7.4'
-              - '8.0'
-              - '8.1'
           - '1.38':
             default: '7.4'
-            versions:
-              - '7.4'
-              - '8.0'
-              - '8.1'
           - '1.35':
             default: '7.4'
-            versions:
-              - '7.4'
-              - '8.0'
-              - '8.1'
+        version: ['7.4','8.0','8.1']
         variant: [apache]
 
     steps:
@@ -44,7 +33,7 @@ jobs:
           
       - name: echo vars
         run: |
-          echo "mw version ${{matrix.mediawiki}} with php ${{matrix.mediawiki.versions}} and default ${{matrix.mediawiki.default}}"
+          echo "mw version ${{matrix.mediawiki.key}} with php ${{matrix.mediawiki.versions.}} and default ${{matrix.mediawiki.default}}"
     
       # - name: Retrieve MediaWiki version
       #   run: |
