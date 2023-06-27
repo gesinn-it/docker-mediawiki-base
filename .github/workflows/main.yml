@@ -67,6 +67,7 @@ jobs:
           else
             TAGS='["${{ env.baseImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}}","${{ env.baseImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"]'
           fi
+          echo $TAGS
           echo "TAGS=$TAGS" >> $GITHUB_OUTPUT
 
       - name: Retrieve MediaWiki version into github environment, for later tagging of image
