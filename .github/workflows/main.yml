@@ -12,16 +12,31 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: [1.35, 1.38, 1.39]
+        mediawiki_version: ['1.39', '1.38', '1.35']
+        php_version: ['8.1','8.0', '7.4']
         variant: [apache]
+        include:
+          # set global default php
+          - php_default: '7.4'
+          # set 1.39 default php
+          - php_default: '8.1'
+            mediawiki_version: '1.39'
+        exclude:
+          - php_version: 7.4
+            mediawiki_version: '1.39'
+
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Retrieve MediaWiki version
+      - name: Generate dockerfile
         run: |
-          echo "TAG_NAME=$(cat ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
+          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.variant}}
+    
+      - name: Retrieve MediaWiki version into github environment, for later tagging of image
+        run: |
+          echo "MEDIAWIKI_FULL_VERSION=$(cat ./Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
@@ -37,24 +52,39 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+
       - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+
+      - name: set baseimagename
+        run: echo "baseImageName=gesinn/docker-mediawiki-base-${{ matrix.variant }}" >> $GITHUB_ENV
+
+      - name: generate tags for image
+        run: |
+          if [[ ${{matrix.php_version}} == ${{matrix.php_default}}  ]]; then
+            TAGS="${{ env.baseImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}},${{ env.baseImageName}}:${{ matrix.mediawiki_version}},${{ env.baseImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.baseImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
+          else
+            TAGS="${{ env.baseImageName}}:${{ env.MEDIAWIKI_FULL_VERSION}}-php${{ matrix.php_version}},${{ env.baseImageName}}:${{ matrix.mediawiki_version}}-php${{ matrix.php_version}}"
+          fi
+          echo $TAGS
+          echo "TAGS=$TAGS" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v4
         with:
           context: ./
-          file: ./${{ matrix.mediawiki_version }}/${{ matrix.variant }}/Dockerfile
+          file: ./Dockerfile
           network: host
           allow: network.host
           build-args: |
              CACHEBUST=${{ steps.date.outputs.date }}
           builder: ${{ steps.buildx.outputs.name }}
           push: true
-          tags: gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ matrix.mediawiki_version }}, gesinn/docker-mediawiki-base-${{ matrix.variant }}:${{ env.TAG_NAME }}
+          tags: ${{ env.TAGS }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
 
