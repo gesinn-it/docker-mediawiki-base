@@ -18,12 +18,21 @@ function generate_tags () {
 	local phpVersion=$4
 	local phpDefault=$5
 	local variant=$6
-	
+
 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
-		TAGS="${baseImageName}:${mediawikiFullVersion},${baseImageName}:${mediawikiVersion},${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
-	else
-		TAGS="${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
+		TAGS="${baseImageName}:${mediawikiFullVersion}-${variant},"
+		TAGS+="${baseImageName}:${mediawikiVersion}-${variant},"
+		if [[ ${variant} == "apache" ]];then
+			TAGS+="${baseImageName}:${mediawikiFullVersion},"
+			TAGS+="${baseImageName}:${mediawikiVersion},"
+		fi
 	fi
+
+	TAGS+="${baseImageName}:${mediawikiFullVersion}-php${phpVersion},"
+	TAGS+="${baseImageName}:${mediawikiFullVersion}-php${phpVersion}-${variant},"
+	TAGS+="${baseImageName}:${mediawikiVersion}-php${phpVersion},"
+	TAGS+="${baseImageName}:${mediawikiVersion}-php${phpVersion}-${variant}"
+
 	echo $TAGS
 }
 
