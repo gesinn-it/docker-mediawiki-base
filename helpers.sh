@@ -11,7 +11,14 @@ function mediawiki_version() {
 		| tail -1
 }
 
-function generate_tags { args : string baseImageName , string mediawikiFullVersion , string mediawikiVersion , string phpVersion , string phpDefault , string variant } {
+function generate_tags () {
+	local baseImageName=$1
+	local mediawikiFullVersion=$2
+	local mediawikiVersion=$3
+	local phpVersion=$4
+	local phpDefault=$5
+	local variant=$6
+	
 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
 		TAGS="${baseImageName}:${mediawikiFullVersion},${baseImageName}:${mediawikiVersion},${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
 	else
