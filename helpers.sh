@@ -20,11 +20,14 @@ function generate_tags () {
 	local variant=$6
 
 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
-		TAGS="${baseImageName}:${mediawikiFullVersion}-${variant},"
-		TAGS+="${baseImageName}:${mediawikiVersion}-${variant},"
+		TAGS="${baseImageName}:${mediawikiVersion}-${variant},"
+		TAGS+="${baseImageName}:${mediawikiFullVersion}-${variant},"
+		
+		# main tags, eg. gesinn/docker-mediawiki-base:1.40
+		# are only generated for apache variant of image
 		if [[ ${variant} == "apache" ]];then
-			TAGS+="${baseImageName}:${mediawikiFullVersion},"
 			TAGS+="${baseImageName}:${mediawikiVersion},"
+			TAGS+="${baseImageName}:${mediawikiFullVersion},"
 		fi
 	fi
 
