@@ -35,10 +35,11 @@ jobs:
       - name: Generate dockerfile
         run: |
           ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.variant}}
-    
-      - name: Retrieve MediaWiki version into github environment, for later tagging of image
+
+      - name: Retrieve MediaWiki version
         run: |
-          echo "MEDIAWIKI_FULL_VERSION=$(cat ./Dockerfile | sed -n -e 's/^.*ENV MEDIAWIKI_VERSION //p')" >> $GITHUB_ENV
+          source ./helpers.sh
+          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         id: buildx
