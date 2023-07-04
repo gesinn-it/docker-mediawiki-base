@@ -11,14 +11,14 @@ function mediawiki_version() {
 		| tail -1
 }
 
-# function generate_tags { args : string baseImageName , string mediawikiFullVersion , string mediawikiVersion , string phpVersion , string phpDefault string variant } {
-# 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
-# 		TAGS="${baseImageName}:${mediawikiFullVersion},${baseImageName}:${mediawikiVersion},${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
-# 	else
-# 		TAGS="${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
-# 	fi
-# 	echo "TAGS=$TAGS" >> $GITHUB_ENV
-# }
+function generate_tags { args : string baseImageName , string mediawikiFullVersion , string mediawikiVersion , string phpVersion , string phpDefault , string variant } {
+	if [[ ${phpVersion} == ${phpDefault}  ]]; then
+		TAGS="${baseImageName}:${mediawikiFullVersion},${baseImageName}:${mediawikiVersion},${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
+	else
+		TAGS="${baseImageName}:${mediawikiFullVersion}-php${phpVersion},${baseImageName}:${mediawikiVersion}-php${phpVersion}"
+	fi
+	echo $TAGS
+}
 
 
 declare -A variantExtras=(
