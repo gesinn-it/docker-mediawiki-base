@@ -12,7 +12,7 @@ function mediawiki_version() {
 }
 
 function generate_tags () {
-	local baseImageName=$1
+	local imageRepository=$1
 	local mediawikiFullVersion=$2
 	local mediawikiVersion=$3
 	local phpVersion=$4
@@ -20,21 +20,21 @@ function generate_tags () {
 	local variant=$6
 
 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
-		TAGS="${baseImageName}:${mediawikiVersion}-${variant},"
-		TAGS+="${baseImageName}:${mediawikiFullVersion}-${variant},"
-		
+		TAGS="${imageRepository}:${mediawikiVersion}-${variant},"
+		TAGS+="${imageRepository}:${mediawikiFullVersion}-${variant},"
+
 		# main tags, eg. gesinn/docker-mediawiki-base:1.40
 		# are only generated for apache variant of image
 		if [[ ${variant} == "apache" ]];then
-			TAGS+="${baseImageName}:${mediawikiVersion},"
-			TAGS+="${baseImageName}:${mediawikiFullVersion},"
+			TAGS+="${imageRepository}:${mediawikiVersion},"
+			TAGS+="${imageRepository}:${mediawikiFullVersion},"
 		fi
 	fi
 
-	TAGS+="${baseImageName}:${mediawikiFullVersion}-php${phpVersion},"
-	TAGS+="${baseImageName}:${mediawikiFullVersion}-php${phpVersion}-${variant},"
-	TAGS+="${baseImageName}:${mediawikiVersion}-php${phpVersion},"
-	TAGS+="${baseImageName}:${mediawikiVersion}-php${phpVersion}-${variant}"
+	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion},"
+	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion}-${variant},"
+	TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion},"
+	TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion}-${variant}"
 
 	echo $TAGS
 }
