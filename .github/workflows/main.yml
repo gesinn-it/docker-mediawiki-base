@@ -74,22 +74,35 @@ jobs:
           fi
           echo $TAGS
           echo "TAGS=$TAGS" >> $GITHUB_ENV
-
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v4
+      
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
         with:
-          context: ./
-          file: ./Dockerfile
-          network: host
-          allow: network.host
-          build-args: |
-             CACHEBUST=${{ steps.date.outputs.date }}
-          builder: ${{ steps.buildx.outputs.name }}
-          push: true
-          tags: ${{ env.TAGS }}
-          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
-          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+          images: |
+            gesinn/docker-mediawiki-base
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=${{ env.mediawiki_version}}
+            type=semver,pattern=${{ env.MEDIAWIKI_FULL_VERSION}}
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+
+      # - name: Build and push
+      #   id: docker_build
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: ./
+      #     file: ./Dockerfile
+      #     network: host
+      #     allow: network.host
+      #     build-args: |
+      #        CACHEBUST=${{ steps.date.outputs.date }}
+      #     builder: ${{ steps.buildx.outputs.name }}
+      #     push: true
+      #     tags: ${{ env.TAGS }}
+      #     cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+      #     cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+
+      # - name: Image digest
+      #   run: echo ${{ steps.docker_build.outputs.digest }}
