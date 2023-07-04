@@ -63,7 +63,7 @@ jobs:
 
 
       - name: set baseimagename
-        run: echo "baseImageName=gesinn/docker-mediawiki-base" >> $GITHUB_ENV
+        run: echo "baseImageName=gesinn/mediawiki-base" >> $GITHUB_ENV
 
       - name: generate tags for image
         run: |
