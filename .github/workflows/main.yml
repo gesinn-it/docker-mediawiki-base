@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         mediawiki_version: ['1.40', '1.39', '1.35']
-        php_version: ['8.1','8.0', '7.4']
+        php_version: ['8.1','8.0', '7.4', 8.2]
         variant: [apache]
         include:
           # set global default php
@@ -26,6 +26,8 @@ jobs:
             mediawiki_version: '1.39'
           - php_version: 7.4
             mediawiki_version: '1.40'
+          - php_version: '8.2'
+            mediawiki_version: '1.35'
 
 
     steps:
