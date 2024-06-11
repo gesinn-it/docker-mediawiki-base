@@ -12,20 +12,22 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: ['1.40', '1.39', '1.35']
+        mediawiki_version: ['1.41', '1.40', '1.39', '1.35']
         php_version: ['8.2', '8.1', '8.0', '7.4']
         variant: [apache]
         include:
           # set global default php
           - php_default: '8.1'
-          # set 1.39 default php
+          # set 1.35 default php
           - php_default: '7.4'
             mediawiki_version: '1.35'
         exclude:
-          - php_version: 7.4
+          - php_version: '7.4'
             mediawiki_version: '1.39'
-          - php_version: 7.4
+          - php_version: '7.4'
             mediawiki_version: '1.40'
+          - php_version: '7.4'
+            mediawiki_version: '1.41'            
           - php_version: '8.2'
             mediawiki_version: '1.35'
 
