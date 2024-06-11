@@ -8,12 +8,12 @@ on:
 jobs:
 
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
         mediawiki_version: ['1.40', '1.39', '1.35']
-        php_version: ['8.1','8.0', '7.4', 8.2]
+        php_version: ['8.2', '8.1', '8.0', '7.4']
         variant: [apache]
         include:
           # set global default php
@@ -45,12 +45,12 @@ jobs:
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
 
       - name: Cache Docker layers
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -58,7 +58,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
 
-      - uses: docker/login-action@v2
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
@@ -74,7 +74,7 @@ jobs:
 
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./
           file: ./Dockerfile
