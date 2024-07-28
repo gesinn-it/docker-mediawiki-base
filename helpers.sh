@@ -1,6 +1,6 @@
 #!/bin/bash
 declare -A peclVersions=(
-	[APCu]="5.1.21"
+	[APCu]="5.1.23"
 )
 
 function mediawiki_version() {
