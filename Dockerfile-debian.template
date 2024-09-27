@@ -11,8 +11,8 @@ RUN set -eux; \
     # Add GPG keys
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 || true; \
     
-    # Update package lists and install dependencies, allowing for insecure repositories
-    apt-get update -o Acquire::Check-Valid-Until=false -o APT::Get::AllowUnauthenticated=true; \
+    # Update package lists and install dependencies, ignoring GPG checks
+    apt-get update -o Acquire::Check-Valid-Until=false -o APT::Get::AllowUnauthenticated=true -o APT::Acquire::AllowInsecureRepositories=true; \
     apt-get install -y --no-install-recommends \
         git \
         librsvg2-bin \
@@ -20,8 +20,7 @@ RUN set -eux; \
         libicu-dev \
         libonig-dev \
 		# Required for SyntaxHighlighting
-        python3 \
-        --allow-insecure-repositories; \
+        python3; \
     
     # Clean up APT lists
     rm -rf /var/lib/apt/lists/*
