@@ -2,11 +2,16 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
+    # Set up the Debian Jessie repository
     echo "deb http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
     echo "deb-src http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 AA8E81B4331F7F50 || true; \
+    
+    # Add GPG keys
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 || true; \
+    
+    # Update package lists and install dependencies, allowing for insecure repositories
     apt-get update -o Acquire::Check-Valid-Until=false -o APT::Get::AllowUnauthenticated=true; \
     apt-get install -y --no-install-recommends \
         git \
@@ -16,7 +21,9 @@ RUN set -eux; \
         libonig-dev \
 		# Required for SyntaxHighlighting
         python3 \
-    ; \
+        --allow-insecure-repositories; \
+    
+    # Clean up APT lists
     rm -rf /var/lib/apt/lists/*
 	
 # Install the PHP extensions we need
