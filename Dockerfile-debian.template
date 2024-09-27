@@ -2,24 +2,26 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
-    # Add the expired key
-    wget -qO - http://archive.debian.org/debian-archive-keyring.gpg | apt-key add -; \
-    
     # Set up the Debian Jessie repository with trusted option
     echo "deb [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     
-    # Update package lists and install dependencies
+    # Update package lists and install wget and other dependencies
     apt-get update -o Acquire::Check-Valid-Until=false; \
+    apt-get install -y --no-install-recommends wget; \
+    
+    # Add expired GPG keys
+    wget -qO - http://archive.debian.org/debian-archive-keyring.gpg | apt-key add -; \
+    
+    # Install other required dependencies
     apt-get install -y --allow-unauthenticated --no-install-recommends \
         git \
         librsvg2-bin \
         imagemagick \
         libicu-dev \
         libonig-dev \
-        # Required for SyntaxHighlighting
         python3; \
     
     # Clean up APT lists
