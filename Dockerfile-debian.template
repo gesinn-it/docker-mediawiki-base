@@ -2,59 +2,55 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
-    # Set up the Debian Jessie repository
-    echo "deb http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
-    echo "deb-src http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
-    echo "deb http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
-    echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
-
-    # Add GPG keys
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50 9D6D8F6BC857C906 || true; \
-
-    # Update package lists and install dependencies, ignoring GPG checks
-    apt-get update -o Acquire::Check-Valid-Until=false; \
-    apt-get install -y --allow-unauthenticated --no-install-recommends \
-        git \
-        librsvg2-bin \
-        imagemagick \
-        libicu-dev \
-        libonig-dev \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		git \
+		librsvg2-bin \
+		imagemagick \
 		# Required for SyntaxHighlighting
-        python3; \
-    
-    # Clean up APT lists
-    rm -rf /var/lib/apt/lists/*
-	
+		python3 \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
 # Install the PHP extensions we need
 RUN set -eux; \
-    savedAptMark="$(apt-mark showmanual)"; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        libicu-dev \
-        libonig-dev \
-        && docker-php-ext-install -j "$(nproc)" \
-            calendar \
-            intl \
-            mbstring \
-            mysqli \
-            opcache; \
-    # Replace '5.1.23' with the desired APCu version if necessary
-    pecl install APCu-5.1.23; \
-    docker-php-ext-enable apcu; \
-    rm -r /tmp/pear; \
-    # Reset apt-mark's "manual" list for cleanup
-    apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $savedAptMark; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
-        | sort -u \
-        | xargs -r dpkg-query -S \
-        | cut -d: -f1 \
-        | sort -u \
-        | xargs -rt apt-mark manual; \
-    # Clean up unnecessary packages
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-    rm -rf /var/lib/apt/lists/*
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		libicu-dev \
+		libonig-dev \
+	; \
+	\
+	docker-php-ext-install -j "$(nproc)" \
+		calendar \
+		intl \
+		mbstring \
+		mysqli \
+		opcache \
+	; \
+	\
+	pecl install APCu-%%APCU_VERSION%%; \
+	docker-php-ext-enable \
+		apcu \
+	; \
+	rm -r /tmp/pear; \
+	\
+	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+		| awk '/=>/ { print $3 }' \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
 %%VARIANT_EXTRAS%%
 
 # set recommended PHP.ini settings

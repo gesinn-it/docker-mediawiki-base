@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: ['1.18']
+        mediawiki_version: ['1.23']
         php_version: ['5.6']
         variant: [apache]
         include:
