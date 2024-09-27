@@ -9,7 +9,7 @@ RUN set -eux; \
     echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     \
     apt-get update -o Acquire::Check-Valid-Until=false; \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --no-install-recommends --allow-unauthenticated \
         git \
         librsvg2-bin \
         imagemagick \
