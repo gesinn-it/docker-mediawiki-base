@@ -8,7 +8,7 @@ RUN set -eux; \
     echo "deb http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     \
-    apt-get update -o Acquire::Check-Valid-Until=false; \
+    apt-get update -o Acquire::Check-Valid-Until=false -o APT::Get::AllowUnauthenticated=true; \
     apt-get install -y --no-install-recommends --allow-unauthenticated \
         git \
         librsvg2-bin \
