@@ -2,39 +2,28 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
-    # Set up the Debian Jessie repository with trusted option
-    echo "deb [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
-    echo "deb-src [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
-    echo "deb [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
-    echo "deb-src [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
+    # Set up the Debian Jessie repository
+    echo "deb http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
+    echo "deb-src http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
+    echo "deb http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
+    echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
 
-    # Update package lists
+    # Add GPG keys
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50 9D6D8F6BC857C906 || true; \
+
+    # Update package lists and install dependencies, ignoring GPG checks
     apt-get update -o Acquire::Check-Valid-Until=false; \
-    
-    # Install wget first
-    apt-get install -y --no-install-recommends wget; \
-
-    # Add GPG keys manually (if the previous method fails)
-    wget -qO /tmp/debian-archive-keyring.gpg http://archive.debian.org/debian-archive-keyring.gpg; \
-    apt-key add /tmp/debian-archive-keyring.gpg; \
-
-    # If the above command fails, try adding keys directly
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 AA8E81B4331F7F50 || true; \
-
-    # Final update after adding keys
-    apt-get update -o Acquire::Check-Valid-Until=false; \
-    
-    # Install other required dependencies
     apt-get install -y --allow-unauthenticated --no-install-recommends \
         git \
         librsvg2-bin \
         imagemagick \
         libicu-dev \
         libonig-dev \
+		# Required for SyntaxHighlighting
         python3; \
     
     # Clean up APT lists
-    rm -rf /var/lib/apt/lists/*; \
+    rm -rf /var/lib/apt/lists/*
 	
 # Install the PHP extensions we need
 RUN set -eux; \
