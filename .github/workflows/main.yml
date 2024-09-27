@@ -11,11 +11,11 @@ jobs:
     strategy:
       matrix:
         mediawiki_version: ['1.18']
-        php_version: ['5.5']
+        php_version: ['5.5.37']
         variant: [apache]
         include:
           # set global default php
-          - php_default: '5.5'
+          - php_default: '5.5.37'
 
     steps:
       - name: Checkout
