@@ -8,15 +8,20 @@ RUN set -eux; \
     echo "deb [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
 
-    # Update package lists and install wget first
+    # Update package lists
     apt-get update -o Acquire::Check-Valid-Until=false; \
+    
+    # Install wget first
     apt-get install -y --no-install-recommends wget; \
-    
-    # Fetch and add GPG keys for Debian Jessie
-    wget -qO - http://archive.debian.org/debian-archive-keyring.gpg | apt-key add - || true; \
+
+    # Add GPG keys manually (if the previous method fails)
+    wget -qO /tmp/debian-archive-keyring.gpg http://archive.debian.org/debian-archive-keyring.gpg; \
+    apt-key add /tmp/debian-archive-keyring.gpg; \
+
+    # If the above command fails, try adding keys directly
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 AA8E81B4331F7F50 || true; \
-    
-    # Update package lists again after adding keys
+
+    # Final update after adding keys
     apt-get update -o Acquire::Check-Valid-Until=false; \
     
     # Install other required dependencies
