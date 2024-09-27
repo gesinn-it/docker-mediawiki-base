@@ -2,13 +2,16 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
+    # Add the expired key
+    wget -qO - http://archive.debian.org/debian-archive-keyring.gpg | apt-key add -; \
+    
     # Set up the Debian Jessie repository with trusted option
     echo "deb [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     
-    # Update package lists and install dependencies, ignoring GPG checks
+    # Update package lists and install dependencies
     apt-get update -o Acquire::Check-Valid-Until=false; \
     apt-get install -y --allow-unauthenticated --no-install-recommends \
         git \
