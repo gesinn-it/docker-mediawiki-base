@@ -8,9 +8,6 @@ RUN set -eux; \
     echo "deb [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src [trusted=yes] http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     
-    # Add GPG keys
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AA8E81B4331F7F50 9D6D8F6BC857C906 || true; \
-    
     # Update package lists and install dependencies, ignoring GPG checks
     apt-get update -o Acquire::Check-Valid-Until=false; \
     apt-get install -y --allow-unauthenticated --no-install-recommends \
