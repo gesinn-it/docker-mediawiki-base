@@ -27,42 +27,34 @@ RUN set -eux; \
 	
 # Install the PHP extensions we need
 RUN set -eux; \
-	\
-	savedAptMark="$(apt-mark showmanual)"; \
-	\
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-		libicu-dev \
-		libonig-dev \
-	; \
-	\
-	docker-php-ext-install -j "$(nproc)" \
-		calendar \
-		intl \
-		mbstring \
-		mysqli \
-		opcache \
-	; \
-	\
-	pecl install APCu-%%APCU_VERSION%%; \
-	docker-php-ext-enable \
-		apcu \
-	; \
-	rm -r /tmp/pear; \
-	\
-	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark; \
-	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-		| awk '/=>/ { print $3 }' \
-		| sort -u \
-		| xargs -r dpkg-query -S \
-		| cut -d: -f1 \
-		| sort -u \
-		| xargs -rt apt-mark manual; \
-	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*
+    savedAptMark="$(apt-mark showmanual)"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        libicu-dev \
+        libonig-dev \
+        && docker-php-ext-install -j "$(nproc)" \
+            calendar \
+            intl \
+            mbstring \
+            mysqli \
+            opcache; \
+    # Replace '5.1.23' with the desired APCu version if necessary
+    pecl install APCu-5.1.23; \
+    docker-php-ext-enable apcu; \
+    rm -r /tmp/pear; \
+    # Reset apt-mark's "manual" list for cleanup
+    apt-mark auto '.*' > /dev/null; \
+    apt-mark manual $savedAptMark; \
+    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+        | awk '/=>/ { print $3 }' \
+        | sort -u \
+        | xargs -r dpkg-query -S \
+        | cut -d: -f1 \
+        | sort -u \
+        | xargs -rt apt-mark manual; \
+    # Clean up unnecessary packages
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    rm -rf /var/lib/apt/lists/*
 %%VARIANT_EXTRAS%%
 
 # set recommended PHP.ini settings
