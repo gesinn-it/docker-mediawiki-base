@@ -2,12 +2,11 @@ FROM php:%%PHP_VERSION%%-%%VARIANT%%
 
 # System dependencies
 RUN set -eux; \
-    \
     echo "deb http://archive.debian.org/debian/ jessie main contrib non-free" > /etc/apt/sources.list; \
     echo "deb-src http://archive.debian.org/debian/ jessie main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
     echo "deb-src http://archive.debian.org/debian-security/ jessie/updates main contrib non-free" >> /etc/apt/sources.list; \
-    \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 9D6D8F6BC857C906 AA8E81B4331F7F50 || true; \
     apt-get update -o Acquire::Check-Valid-Until=false -o APT::Get::AllowUnauthenticated=true; \
     apt-get install -y --no-install-recommends \
         git \
@@ -15,7 +14,7 @@ RUN set -eux; \
         imagemagick \
         libicu-dev \
         libonig-dev \
-        # Required for SyntaxHighlighting
+		# Required for SyntaxHighlighting
         python3 \
     ; \
     rm -rf /var/lib/apt/lists/*
