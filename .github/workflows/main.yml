@@ -12,24 +12,12 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: ['1.45', '1.44', '1.43', '1.39']
-        php_version: ['8.4', '8.3', '8.2', '8.1']
+        mediawiki_version: ['1.45', '1.44', '1.43']
+        php_version: ['8.4', '8.3', '8.2']
         variant: [apache]
         include:
           # set global default php
-          - php_default: '8.1'
-          # set 1.35 default php
-          #- php_default: '7.4'
-          #  mediawiki_version: '1.35'
-        exclude:        
-          - php_version: '8.2'
-            mediawiki_version: '1.39'
-          - php_version: '8.3'
-            mediawiki_version: '1.39'
-          - php_version: '8.4'
-            mediawiki_version: '1.39'
-          - php_version: '8.1'
-            mediawiki_version: '1.45'
+          - php_default: '8.2'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
