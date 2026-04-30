@@ -32,9 +32,10 @@ RUN set -eux; \
 		opcache \
 	; \
 	\
-	pecl install APCu-%%APCU_VERSION%%; \
+	pecl install APCu-%%APCU_VERSION%% ast-%%AST_VERSION%%; \
 	docker-php-ext-enable \
 		apcu \
+		ast \
 	; \
 	rm -r /tmp/pear; \
 	\

@@ -27,6 +27,7 @@ sed -r \
 	-e 's!%%PHP_VERSION%%!'"$github_php_version"'!g' \
 	-e 's!%%VARIANT%%!'"$github_image_variant"'!g' \
 	-e 's!%%APCU_VERSION%%!'"${peclVersions[APCu]}"'!g' \
+	-e 's!%%AST_VERSION%%!'"${peclVersions[ast]}"'!g' \
 	-e 's@%%VARIANT_EXTRAS%%@'"$extras"'@g' \
 	-e 's!%%CMD%%!'"$cmd"'!g' \
 	"Dockerfile-${base}.template" > "./Dockerfile"
