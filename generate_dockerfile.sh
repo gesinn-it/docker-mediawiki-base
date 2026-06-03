@@ -54,10 +54,14 @@ elif [[ "$mw_type" == "branch" ]]; then
   cat > "$tmpSetup" << SETUP
 # MediaWiki setup (branch: ${mw_branch}@${mw_sha:0:7})
 # GPG verification is intentionally skipped – no signed artifact exists for pre-release branches
+# vendor/ is not included in GitHub archive tarballs; composer resolves dependencies from composer.lock
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer-build
 RUN set -eux; \\
 	curl -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
 	tar -x --strip-components=1 -f mediawiki.tar.gz; \\
 	rm mediawiki.tar.gz; \\
+	/usr/local/bin/composer-build install --no-dev --no-scripts --prefer-dist; \\
+	rm /usr/local/bin/composer-build; \\
 	chown -R www-data:www-data extensions skins cache images
 SETUP
 else
