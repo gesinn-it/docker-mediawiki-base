@@ -29,10 +29,10 @@ RUN set -eux; \
 		intl \
 		mbstring \
 		mysqli \
-		opcache \
 	; \
 	\
-	pecl install APCu-%%APCU_VERSION%% ast-%%AST_VERSION%%; \
+	pecl install APCu-%%APCU_VERSION%%; \
+	pecl install ast-%%AST_VERSION%%; \
 	docker-php-ext-enable \
 		apcu \
 		ast \
@@ -45,10 +45,12 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
-		| xargs -r dpkg-query -S \
+		| xargs -r dpkg-query -S 2>/dev/null \
 		| cut -d: -f1 \
 		| sort -u \
-		| xargs -rt apt-mark manual; \
+		| xargs -r apt-mark manual; \
+	dpkg-query -W -f='${binary:Package}\n' 'libicu[0-9]*' 2>/dev/null \
+		| xargs -r apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*

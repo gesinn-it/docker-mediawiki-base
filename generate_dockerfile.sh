@@ -57,6 +57,9 @@ elif [[ "$mw_type" == "branch" ]]; then
 # vendor/ is not included in GitHub archive tarballs; composer resolves dependencies from composer.lock
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer-build
 RUN set -eux; \\
+	apt-get update; \\
+	apt-get install -y --no-install-recommends unzip; \\
+	rm -rf /var/lib/apt/lists/*; \\
 	curl -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
 	tar -x --strip-components=1 -f mediawiki.tar.gz; \\
 	rm mediawiki.tar.gz; \\
