@@ -5,14 +5,14 @@ cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 source ./helpers.sh
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 2 ]; then
   echo "not enough arguments provided"
   exit 1
 fi
 
 github_mw_version="$1"
 github_php_version="$2"
-github_image_variant="$3"
+github_image_variant='apache'
 
 mediawikiVersion="$(mediawiki_version $github_mw_version)"
 

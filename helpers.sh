@@ -18,18 +18,15 @@ function generate_tags () {
 	local mediawikiVersion=$3
 	local phpVersion=$4
 	local phpDefault=$5
-	local variant=$6
+	local variant='apache'
 
 	if [[ ${phpVersion} == ${phpDefault}  ]]; then
 		TAGS="${imageRepository}:${mediawikiVersion}-${variant},"
 		TAGS+="${imageRepository}:${mediawikiFullVersion}-${variant},"
 
 		# main tags, eg. gesinn/docker-mediawiki-base:1.40
-		# are only generated for apache variant of image
-		if [[ ${variant} == "apache" ]];then
-			TAGS+="${imageRepository}:${mediawikiVersion},"
-			TAGS+="${imageRepository}:${mediawikiFullVersion},"
-		fi
+		TAGS+="${imageRepository}:${mediawikiVersion},"
+		TAGS+="${imageRepository}:${mediawikiFullVersion},"
 	fi
 
 	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion},"
@@ -43,16 +40,10 @@ function generate_tags () {
 
 declare -A variantExtras=(
 	[apache]='\n# Enable Short URLs\nRUN set -eux; \\\n\ta2enmod rewrite; \\\n\t{ \\\n\t\techo \"<Directory /var/www/html>\"; \\\n\t\techo \"  RewriteEngine On\"; \\\n\t\techo \"  RewriteCond %{REQUEST_FILENAME} !-f\"; \\\n\t\techo \"  RewriteCond %{REQUEST_FILENAME} !-d\"; \\\n\t\techo \"  RewriteRule ^ %{DOCUMENT_ROOT}/index.php [L]\"; \\\n\t\techo \"</Directory>\"; \\\n\t} > \"$APACHE_CONFDIR/conf-available/short-url.conf\"; \\\n\ta2enconf short-url\n\n# Enable AllowEncodedSlashes for VisualEditor\nRUN sed -i \"s/<\\/VirtualHost>/\\tAllowEncodedSlashes NoDecode\\n<\\/VirtualHost>/\" \"$APACHE_CONFDIR/sites-available/000-default.conf\"'
-	[fpm]=''
-	[fpm-alpine]=''
 )
 declare -A variantCmds=(
 	[apache]='apache2-foreground'
-	[fpm]='php-fpm'
-	[fpm-alpine]='php-fpm'
 )
 declare -A variantBases=(
 	[apache]='debian'
-	[fpm]='debian'
-	[fpm-alpine]='alpine'
 )

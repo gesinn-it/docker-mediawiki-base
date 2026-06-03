@@ -14,7 +14,6 @@ jobs:
       matrix:
         mediawiki_version: ['1.45', '1.44', '1.43']
         php_version: ['8.4', '8.3', '8.2']
-        variant: [apache]
         include:
           # set global default php
           - php_default: '8.2'
@@ -24,7 +23,7 @@ jobs:
 
       - name: Generate dockerfile
         run: |
-          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.variant}}
+          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}}
 
       - name: Retrieve MediaWiki version
         run: |
@@ -43,7 +42,7 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v4
         with:
-          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/${{ matrix.variant }}
+          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/apache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
@@ -61,7 +60,7 @@ jobs:
       - name: generate tags for image
         run: |
           source ./helpers.sh
-          echo "TAGS=$(generate_tags ${{ env.imageRepository}} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}} ${{matrix.variant}})" >> $GITHUB_ENV
+          echo "TAGS=$(generate_tags ${{ env.imageRepository}} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}})" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
@@ -76,8 +75,8 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
-          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/${{ matrix.variant }}
-          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/${{ matrix.variant }}
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
+          cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
           platforms: linux/amd64,linux/arm64
 
       - name: Image digest
