@@ -41,21 +41,29 @@ function generate_tags () {
 	local mediawikiVersion=$3
 	local phpVersion=$4
 	local phpDefault=$5
+	local refType=${6:-tag}   # 'tag' (stable) or 'branch' (pre-release)
 	local variant='apache'
+	local TAGS=""
 
-	if [[ ${phpVersion} == ${phpDefault}  ]]; then
-		TAGS="${imageRepository}:${mediawikiVersion}-${variant},"
-		TAGS+="${imageRepository}:${mediawikiFullVersion}-${variant},"
-
-		# main tags, eg. gesinn/docker-mediawiki-base:1.40
-		TAGS+="${imageRepository}:${mediawikiVersion},"
+	if [[ ${phpVersion} == ${phpDefault} ]]; then
+		TAGS="${imageRepository}:${mediawikiFullVersion}-${variant},"
 		TAGS+="${imageRepository}:${mediawikiFullVersion},"
+
+		if [[ "$refType" != "branch" ]]; then
+			# floating major-version tags only for stable releases
+			TAGS+="${imageRepository}:${mediawikiVersion}-${variant},"
+			TAGS+="${imageRepository}:${mediawikiVersion},"
+		fi
 	fi
 
 	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion},"
-	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion}-${variant},"
-	TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion},"
-	TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion}-${variant}"
+	TAGS+="${imageRepository}:${mediawikiFullVersion}-php${phpVersion}-${variant}"
+
+	if [[ "$refType" != "branch" ]]; then
+		TAGS+=","
+		TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion},"
+		TAGS+="${imageRepository}:${mediawikiVersion}-php${phpVersion}-${variant}"
+	fi
 
 	echo $TAGS
 }

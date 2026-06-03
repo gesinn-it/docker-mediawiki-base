@@ -31,6 +31,7 @@ jobs:
           mw_ref="$(mediawiki_ref ${{matrix.mediawiki_version}})"
           mw_type="${mw_ref%%:*}"
           mw_rest="${mw_ref#*:}"
+          echo "MEDIAWIKI_REF_TYPE=${mw_type}" >> $GITHUB_ENV
           if [[ "$mw_type" == "tag" ]]; then
             echo "MEDIAWIKI_FULL_VERSION=${mw_rest}" >> $GITHUB_ENV
           else
@@ -68,7 +69,7 @@ jobs:
       - name: generate tags for image
         run: |
           source ./helpers.sh
-          echo "TAGS=$(generate_tags ${{ env.imageRepository}} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}})" >> $GITHUB_ENV
+          echo "TAGS=$(generate_tags ${{ env.imageRepository}} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}} ${{env.MEDIAWIKI_REF_TYPE}})" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
