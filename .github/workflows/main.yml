@@ -12,11 +12,19 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
-        php_version: ['8.4', '8.3', '8.2']
-        include:
-          # set global default php
-          - php_default: '8.2'
+        mediawiki_version: &mediawiki_versions ['1.46', '1.45', '1.44', '1.43']
+        php_version: ['8.5', '8.4', '8.3', '8.2']
+        exclude:
+          - mediawiki_version: '1.46'
+            php_version: '8.3'
+          - mediawiki_version: '1.46'
+            php_version: '8.2'
+          - mediawiki_version: '1.45'
+            php_version: '8.5'
+          - mediawiki_version: '1.44'
+            php_version: '8.5'
+          - mediawiki_version: '1.43'
+            php_version: '8.5'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +75,11 @@ jobs:
       - name: generate tags for image
         run: |
           source ./helpers.sh
-          tags="$(generate_tags "${{ env.imageRepository }}" "${{ env.MEDIAWIKI_FULL_VERSION }}" "${{ matrix.mediawiki_version }}" "${{ matrix.php_version }}" "${{ matrix.php_default }}" "${{ env.MEDIAWIKI_REF_TYPE }}")"
+          php_default="8.2"
+          if [[ "${{ matrix.mediawiki_version }}" == "1.46" ]]; then
+            php_default="8.4"
+          fi
+          tags="$(generate_tags "${{ env.imageRepository }}" "${{ env.MEDIAWIKI_FULL_VERSION }}" "${{ matrix.mediawiki_version }}" "${{ matrix.php_version }}" "${php_default}" "${{ env.MEDIAWIKI_REF_TYPE }}")"
           echo "TAGS=${tags}" >> $GITHUB_ENV
 
       - name: Build and push
@@ -89,3 +101,109 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+  cleanup-dev-tags:
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.event_name == 'push' && needs.build.result == 'success'
+    strategy:
+      matrix:
+        mediawiki_version: *mediawiki_versions
+    env:
+      IMAGE_NAMESPACE: gesinn
+      IMAGE_REPOSITORY: mediawiki-base
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cleanup old dev images
+        env:
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          source ./helpers.sh
+
+          hub_api="https://hub.docker.com/v2"
+          hub_repo="${hub_api}/repositories/${IMAGE_NAMESPACE}/${IMAGE_REPOSITORY}"
+
+          auth_payload="$(jq -cn --arg u "$DOCKER_HUB_USERNAME" --arg p "$DOCKER_HUB_ACCESS_TOKEN" '{username:$u,password:$p}')"
+          hub_jwt="$(curl -fsSL -H 'Content-Type: application/json' -X POST "${hub_api}/users/login/" -d "$auth_payload" | jq -r '.token')"
+
+          if [[ -z "$hub_jwt" || "$hub_jwt" == "null" ]]; then
+            echo "Failed to authenticate against Docker Hub API" >&2
+            exit 1
+          fi
+
+          tags_file="$(mktemp)"
+          page_url="${hub_repo}/tags?page_size=100"
+          while [[ -n "$page_url" && "$page_url" != "null" ]]; do
+            page_json="$(curl -fsSL -H "Authorization: JWT ${hub_jwt}" "$page_url")"
+            jq -r '.results[] | [.name, .last_updated] | @tsv' <<< "$page_json" >> "$tags_file"
+            page_url="$(jq -r '.next' <<< "$page_json")"
+          done
+
+          if [[ ! -s "$tags_file" ]]; then
+            echo "No tags found in repository ${IMAGE_NAMESPACE}/${IMAGE_REPOSITORY}; nothing to clean up."
+            exit 0
+          fi
+
+          major="${{ matrix.mediawiki_version }}"
+          ref_info="$(mediawiki_ref "$major")"
+          IFS=':' read -r ref_type _ _ <<< "$ref_info"
+
+          mapfile -t dev_build_keys < <(
+            awk -v m="$major" -F '\t' '
+              $1 ~ ("^" m "-dev-[0-9a-f]{7}(-|$)") {
+                if (match($1, "^" m "-dev-[0-9a-f]{7}")) {
+                  key = substr($1, RSTART, RLENGTH)
+                  print key
+                }
+              }
+            ' "$tags_file" | sort -u
+          )
+
+          if [[ ${#dev_build_keys[@]} -eq 0 ]]; then
+            echo "No dev tag groups for ${major}; skipping."
+            exit 0
+          fi
+
+          mapfile -t sorted_groups < <(
+            awk -v m="$major" -F '\t' '
+              $1 ~ ("^" m "-dev-[0-9a-f]{7}(-|$)") {
+                if (match($1, "^" m "-dev-[0-9a-f]{7}")) {
+                  key = substr($1, RSTART, RLENGTH)
+                  ts = $2
+                  if (!(key in latest) || ts > latest[key]) {
+                    latest[key] = ts
+                  }
+                }
+              }
+              END {
+                for (k in latest) {
+                  print latest[k] "\t" k
+                }
+              }
+            ' "$tags_file" | sort -r | awk -F '\t' '{print $2}'
+          )
+
+          delete_from_index=0
+          if [[ "$ref_type" == "tag" ]]; then
+            echo "Stable tag available for ${major}; deleting all dev build groups (${#sorted_groups[@]})."
+          else
+            delete_from_index=5
+            if [[ ${#sorted_groups[@]} -le 5 ]]; then
+              echo "${major} remains in dev mode; ${#sorted_groups[@]} groups <= 5, nothing to delete."
+              exit 0
+            fi
+            echo "${major} remains in dev mode; deleting groups older than latest 5 (total ${#sorted_groups[@]})."
+          fi
+
+          for ((i = delete_from_index; i < ${#sorted_groups[@]}; i++)); do
+            group="${sorted_groups[$i]}"
+            mapfile -t tags_to_delete < <(awk -v g="$group" -F '\t' '$1 ~ ("^" g "(-|$)") {print $1}' "$tags_file")
+            for tag_name in "${tags_to_delete[@]}"; do
+              echo "Deleting ${IMAGE_NAMESPACE}/${IMAGE_REPOSITORY}:${tag_name}"
+              curl -fsSL -X DELETE -H "Authorization: JWT ${hub_jwt}" "${hub_repo}/tags/${tag_name}/" > /dev/null
+            done
+          done
