@@ -72,27 +72,6 @@ RUN set -eux; \
 ENV MEDIAWIKI_MAJOR_VERSION %%MEDIAWIKI_MAJOR_VERSION%%
 ENV MEDIAWIKI_VERSION %%MEDIAWIKI_VERSION%%
 
-# MediaWiki setup
-RUN set -eux; \
-	fetchDeps=" \
-		gnupg \
-		dirmngr \
-	"; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends $fetchDeps; \
-	\
-	curl -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz" -o mediawiki.tar.gz; \
-	curl -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz.sig" -o mediawiki.tar.gz.sig; \
-	export GNUPGHOME="$(mktemp -d)"; \
-	# Fetch and import keys from the official Wikimedia key bundle \
-	curl -fsSL https://www.mediawiki.org/keys/keys.txt | gpg --import;  \
-	gpg --batch --verify mediawiki.tar.gz.sig mediawiki.tar.gz; \
-	tar -x --strip-components=1 -f mediawiki.tar.gz; \
-	gpgconf --kill all; \
-	rm -r "$GNUPGHOME" mediawiki.tar.gz.sig mediawiki.tar.gz; \
-	chown -R www-data:www-data extensions skins cache images; \
-	\
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps; \
-	rm -rf /var/lib/apt/lists/*
+%%MEDIAWIKI_SETUP%%
 
 CMD ["%%CMD%%"]

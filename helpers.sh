@@ -4,12 +4,35 @@ declare -A peclVersions=(
 	[ast]="1.1.3"
 )
 
-function mediawiki_version() {
-	git ls-remote --sort=version:refname --tags https://github.com/wikimedia/mediawiki.git \
+function mediawiki_ref() {
+	local major_version="$1"
+
+	# Stage 1 – Tag lookup
+	local tag
+	tag=$(git ls-remote --sort=version:refname --tags https://github.com/wikimedia/mediawiki.git \
 		| cut -d/ -f3 \
 		| tr -d '^{}' \
-		| grep -E "^$1" \
-		| tail -1
+		| grep -E "^${major_version}\." \
+		| tail -1)
+
+	if [[ -n "$tag" ]]; then
+		echo "tag:${tag}"
+		return 0
+	fi
+
+	# Stage 2 – Branch fallback
+	local branch="REL$(echo "$major_version" | tr '.' '_')"
+	local sha
+	sha=$(git ls-remote --heads https://github.com/wikimedia/mediawiki.git "$branch" \
+		| cut -f1)
+
+	if [[ -n "$sha" ]]; then
+		echo "branch:${branch}:${sha:0:7}"
+		return 0
+	fi
+
+	echo "Error: No tag or branch found for MediaWiki version ${major_version}" >&2
+	exit 1
 }
 
 function generate_tags () {

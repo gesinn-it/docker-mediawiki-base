@@ -28,7 +28,15 @@ jobs:
       - name: Retrieve MediaWiki version
         run: |
           source ./helpers.sh
-          echo "MEDIAWIKI_FULL_VERSION=$(mediawiki_version ${{matrix.mediawiki_version}})" >> $GITHUB_ENV
+          mw_ref="$(mediawiki_ref ${{matrix.mediawiki_version}})"
+          mw_type="${mw_ref%%:*}"
+          mw_rest="${mw_ref#*:}"
+          if [[ "$mw_type" == "tag" ]]; then
+            echo "MEDIAWIKI_FULL_VERSION=${mw_rest}" >> $GITHUB_ENV
+          else
+            mw_sha="${mw_rest#*:}"
+            echo "MEDIAWIKI_FULL_VERSION=${{matrix.mediawiki_version}}-dev-${mw_sha}" >> $GITHUB_ENV
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
