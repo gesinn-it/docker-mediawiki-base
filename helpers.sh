@@ -27,7 +27,7 @@ function mediawiki_ref() {
 		| cut -f1)
 
 	if [[ -n "$sha" ]]; then
-		echo "branch:${branch}:${sha:0:7}"
+		echo "branch:${branch}:${sha}"
 		return 0
 	fi
 

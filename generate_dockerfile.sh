@@ -50,12 +50,14 @@ SETUP
 elif [[ "$mw_type" == "branch" ]]; then
   mw_branch="${mw_rest%%:*}"
   mw_sha="${mw_rest#*:}"
-  mediawikiVersion="${github_mw_version}-dev-${mw_sha}"
+  mediawikiVersion="${github_mw_version}-dev-${mw_sha:0:7}"
   cat > "$tmpSetup" << SETUP
-# MediaWiki setup (branch: ${mw_branch}@${mw_sha})
+# MediaWiki setup (branch: ${mw_branch}@${mw_sha:0:7})
+# GPG verification is intentionally skipped – no signed artifact exists for pre-release branches
 RUN set -eux; \\
-	git clone --depth 1 --branch ${mw_branch} https://github.com/wikimedia/mediawiki.git .; \\
-	git checkout ${mw_sha}; \\
+	curl -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
+	tar -x --strip-components=1 -f mediawiki.tar.gz; \\
+	rm mediawiki.tar.gz; \\
 	chown -R www-data:www-data extensions skins cache images
 SETUP
 else

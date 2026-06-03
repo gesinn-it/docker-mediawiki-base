@@ -35,7 +35,7 @@ jobs:
             echo "MEDIAWIKI_FULL_VERSION=${mw_rest}" >> $GITHUB_ENV
           else
             mw_sha="${mw_rest#*:}"
-            echo "MEDIAWIKI_FULL_VERSION=${{matrix.mediawiki_version}}-dev-${mw_sha}" >> $GITHUB_ENV
+            echo "MEDIAWIKI_FULL_VERSION=${{matrix.mediawiki_version}}-dev-${mw_sha:0:7}" >> $GITHUB_ENV
           fi
 
       - name: Set up QEMU
