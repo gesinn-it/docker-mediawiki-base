@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: ['1.45', '1.44', '1.43']
+        mediawiki_version: ['1.46', '1.45', '1.44', '1.43']
         php_version: ['8.4', '8.3', '8.2']
         include:
           # set global default php
@@ -29,13 +29,11 @@ jobs:
         run: |
           source ./helpers.sh
           mw_ref="$(mediawiki_ref ${{matrix.mediawiki_version}})"
-          mw_type="${mw_ref%%:*}"
-          mw_rest="${mw_ref#*:}"
+          IFS=':' read -r mw_type mw_value mw_sha <<< "$mw_ref"
           echo "MEDIAWIKI_REF_TYPE=${mw_type}" >> $GITHUB_ENV
           if [[ "$mw_type" == "tag" ]]; then
-            echo "MEDIAWIKI_FULL_VERSION=${mw_rest}" >> $GITHUB_ENV
+            echo "MEDIAWIKI_FULL_VERSION=${mw_value}" >> $GITHUB_ENV
           else
-            mw_sha="${mw_rest#*:}"
             echo "MEDIAWIKI_FULL_VERSION=${{matrix.mediawiki_version}}-dev-${mw_sha:0:7}" >> $GITHUB_ENV
           fi
 
@@ -69,7 +67,8 @@ jobs:
       - name: generate tags for image
         run: |
           source ./helpers.sh
-          echo "TAGS=$(generate_tags ${{ env.imageRepository}} ${{env.MEDIAWIKI_FULL_VERSION}} ${{matrix.mediawiki_version}} ${{matrix.php_version}} ${{matrix.php_default}} ${{env.MEDIAWIKI_REF_TYPE}})" >> $GITHUB_ENV
+          tags="$(generate_tags "${{ env.imageRepository }}" "${{ env.MEDIAWIKI_FULL_VERSION }}" "${{ matrix.mediawiki_version }}" "${{ matrix.php_version }}" "${{ matrix.php_default }}" "${{ env.MEDIAWIKI_REF_TYPE }}")"
+          echo "TAGS=${tags}" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
