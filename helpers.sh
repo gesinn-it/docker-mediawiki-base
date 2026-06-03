@@ -1,6 +1,6 @@
 #!/bin/bash
 declare -A peclVersions=(
-	[APCu]="5.1.24"
+	[APCu]="5.1.27"
 	[ast]="1.1.3"
 )
 
