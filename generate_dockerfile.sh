@@ -63,6 +63,8 @@ RUN set -eux; \\
 	/usr/local/bin/composer-build install --no-dev --no-scripts --prefer-dist; \\
 	rm /usr/local/bin/composer-build; \\
 	chown -R www-data:www-data extensions skins cache images
+ENV MEDIAWIKI_DEV_BUILD=true
+RUN echo 'WARNING: This image was built from a MediaWiki branch snapshot (no GPG verification). Not for production use.'
 SETUP
 else
   echo "Error: unexpected mediawiki_ref output: ${mw_ref}" >&2
