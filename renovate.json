@@ -1,0 +1,32 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended"],
+	"semanticCommits": "enabled",
+	"rebaseWhen": "behind-base-branch",
+	"customManagers": [
+		{
+			"customType": "regex",
+			"description": "Track the PECL extension versions (APCu, ast) pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. Upstream tags carry a 'v' prefix that the pinned values omit.",
+			"managerFilePatterns": ["/^helpers\\.sh$/"],
+			"matchStrings": [
+				"\\[APCu\\]=\"(?<currentValue>[0-9.]+)\""
+			],
+			"depNameTemplate": "APCu",
+			"datasourceTemplate": "github-tags",
+			"packageNameTemplate": "krakjoe/apcu",
+			"extractVersionTemplate": "^v(?<version>.+)$"
+		},
+		{
+			"customType": "regex",
+			"description": "Track the PECL extension versions (APCu, ast) pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. Upstream tags carry a 'v' prefix that the pinned values omit.",
+			"managerFilePatterns": ["/^helpers\\.sh$/"],
+			"matchStrings": [
+				"\\[ast\\]=\"(?<currentValue>[0-9.]+)\""
+			],
+			"depNameTemplate": "ast",
+			"datasourceTemplate": "github-tags",
+			"packageNameTemplate": "nikic/php-ast",
+			"extractVersionTemplate": "^v(?<version>.+)$"
+		}
+	]
+}
