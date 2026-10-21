@@ -63,6 +63,7 @@ Run the workflow via *Actions → CI to Docker Hub → Run workflow*. Inputs:
 
 - `force`: rebuild all selected entries even if nothing changed
 - `dry_run`: build for `linux/amd64` only, push nothing and do not trigger the downstream build
+- `downstream_only`: do not build, only (re)trigger the downstream build for the selected entries, e.g. after failed downstream runs. Together with `build_timestamp` (empty = now) it controls the timestamp of the downstream tags
 - `mediawiki_version`, `php_version`: restrict the run to one MediaWiki major version and/or PHP version (e.g. `1.43` / `8.2`); empty means all
 
 Runs never overlap (`concurrency` group), and a failing entry does not stop the others.
@@ -88,6 +89,8 @@ The build uses exactly the upstream digest that is recorded in the labels (`FROM
 
 ### Downstream build
 
-After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version`, `php_version` and the shared `build_timestamp`, so that `mediawiki-base`, `mediawiki` and `mediawiki-ci` of one run carry the same immutable timestamp tag).
+After the builds, the job `trigger-downstream` starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly the combinations this run has pushed (`workflow_dispatch` with `mediawiki_version`, `php_version` and the shared `build_timestamp`, so that `mediawiki-base`, `mediawiki` and `mediawiki-ci` of one run carry the same immutable timestamp tag). The downstream runs are started one after the other and each is awaited, because running them all at once exceeds the Docker Hub rate limits (HTTP 429). A full rebuild of all entries therefore takes a few hours.
+
+If downstream runs failed, start this workflow with `downstream_only` (and optionally `mediawiki_version` / `php_version`) to trigger them again without rebuilding the base images.
 
 This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).

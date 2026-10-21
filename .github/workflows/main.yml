@@ -14,6 +14,14 @@ on:
         description: 'Rebuild all selected entries, even if nothing changed'
         type: boolean
         default: false
+      downstream_only:
+        description: 'Do not build, only (re)trigger the downstream build for the selected entries (e.g. after failed downstream runs)'
+        type: boolean
+        default: false
+      build_timestamp:
+        description: 'Timestamp (UTC, YYYYMMDDTHHMM) for the immutable tags; empty = now. Use the timestamp of the original run together with downstream_only'
+        type: string
+        default: ''
       dry_run:
         description: 'Build amd64 only: do not push images and do not trigger the downstream build'
         type: boolean
@@ -51,22 +59,28 @@ jobs:
         id: plan
         env:
           # the weekly schedule is the forced rebuild
-          FORCE: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 3 * * 0') || inputs.force == true }}
+          FORCE: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 3 * * 0') || inputs.force == true || inputs.downstream_only == true }}
           ALWAYS_BUILD: ${{ github.event_name == 'push' }}
           ONLY_MEDIAWIKI: ${{ inputs.mediawiki_version }}
           ONLY_PHP: ${{ inputs.php_version }}
+          INPUT_BUILD_TIMESTAMP: ${{ inputs.build_timestamp }}
         run: |
+          timestamp="${INPUT_BUILD_TIMESTAMP:-$(date -u +%Y%m%dT%H%M)}"
+          if [[ ! "$timestamp" =~ ^[0-9]{8}T[0-9]{4}$ ]]; then
+            echo "build_timestamp must look like 20261021T0933, got: ${timestamp}" >&2
+            exit 1
+          fi
           matrix="$(./plan.sh)"
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
           echo "majors=$(jq -c '[.[].mediawiki_version] | unique' matrix.json)" >> "$GITHUB_OUTPUT"
-          echo "build_timestamp=$(date -u +%Y%m%dT%H%M)" >> "$GITHUB_OUTPUT"
+          echo "build_timestamp=${timestamp}" >> "$GITHUB_OUTPUT"
           if [[ "$matrix" == "[]" ]]; then
             echo "Nothing to rebuild: php base images and MediaWiki refs are unchanged." | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
   build:
     needs: plan
-    if: needs.plan.outputs.matrix != '[]'
+    if: needs.plan.outputs.matrix != '[]' && !inputs.downstream_only
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -174,19 +188,25 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
-      # Only reached after a successful push, i.e. exactly for the combinations that were rebuilt.
-      - name: Trigger downstream build
-        if: matrix.downstream && !inputs.dry_run
+  # One downstream run after the other: running them all at once exceeds the Docker Hub rate limits.
+  trigger-downstream:
+    needs: [plan, build]
+    if: >-
+      !cancelled() && !inputs.dry_run && needs.plan.outputs.matrix != '[]' &&
+      (needs.build.result == 'success' || needs.build.result == 'failure' || needs.build.result == 'skipped')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Trigger downstream builds
         env:
           GH_TOKEN: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
-        run: |
-          gh workflow run main.yml \
-            --repo gesinn-it/docker-mediawiki \
-            --ref "${{ matrix.downstream_ref }}" \
-            -f mediawiki_version=${{ matrix.mediawiki_version }} \
-            -f php_version=${{ matrix.php_version }} \
-            -f build_timestamp=${{ needs.plan.outputs.build_timestamp }}
-
+          # only entries that this run has pushed (not with downstream_only, which has no build)
+          CHECK_PUBLISHED: ${{ !inputs.downstream_only }}
+          PLAN: ${{ needs.plan.outputs.matrix }}
+          BUILD_TIMESTAMP: ${{ needs.plan.outputs.build_timestamp }}
+        run: ./trigger_downstream.sh "$PLAN" "$BUILD_TIMESTAMP"
 
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
