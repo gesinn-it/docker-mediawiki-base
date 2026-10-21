@@ -62,7 +62,7 @@ If nothing changed, the run finishes without building or pushing anything; the l
 Run the workflow via *Actions → CI to Docker Hub → Run workflow*. Inputs:
 
 - `force`: rebuild all selected entries even if nothing changed
-- `dry_run`: build only, push nothing and do not trigger the downstream build
+- `dry_run`: build for `linux/amd64` only, push nothing and do not trigger the downstream build
 - `mediawiki_version`, `php_version`: restrict the run to one MediaWiki major version and/or PHP version (e.g. `1.43` / `8.2`); empty means all
 
 Runs never overlap (`concurrency` group), and a failing entry does not stop the others.
