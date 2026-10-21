@@ -94,3 +94,7 @@ After the builds, the job `trigger-downstream` starts the build in [gesinn-it/do
 If downstream runs failed, start this workflow with `downstream_only` (and optionally `mediawiki_version` / `php_version`) to trigger them again without rebuilding the base images.
 
 This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).
+
+## End-of-life versions
+
+MediaWiki 1.39 is no longer built from `main`. It is maintained on the branch [`1.39`](https://github.com/gesinn-it/docker-mediawiki-base/tree/1.39) (PHP 8.2 only; the existing `1.39-php8.1` images stay untouched) and triggers the branch `maintenance/1.39` of `gesinn-it/docker-mediawiki`. Builds there are started manually.
