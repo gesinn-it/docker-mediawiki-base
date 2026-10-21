@@ -182,9 +182,10 @@ jobs:
         run: |
           gh workflow run main.yml \
             --repo gesinn-it/docker-mediawiki \
-            --ref main \
+            --ref "${{ matrix.downstream_ref }}" \
             -f mediawiki_version=${{ matrix.mediawiki_version }} \
-            -f php_version=${{ matrix.php_version }}
+            -f php_version=${{ matrix.php_version }} \
+            -f build_timestamp=${{ needs.plan.outputs.build_timestamp }}
 
 
   cleanup-dev-tags:

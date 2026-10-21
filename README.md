@@ -46,7 +46,7 @@ The workflow (`.github/workflows/main.yml`) runs on:
 | schedule, weekly (Sunday night) | forced rebuild of everything, picks up Debian updates for the packages installed by the template |
 | manual (`workflow_dispatch`) | change detection by default, see inputs below |
 
-The entries to build are listed in `matrix.json` (including the default PHP version of each MediaWiki version and whether the downstream build is triggered).
+The entries to build are listed in `matrix.json` (including the default PHP version of each MediaWiki version, whether the downstream build is triggered and from which downstream branch).
 
 ### Change detection
 
@@ -88,7 +88,7 @@ The build uses exactly the upstream digest that is recorded in the labels (`FROM
 
 ### Downstream build
 
-After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version` and `php_version`).
+After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version`, `php_version` and the shared `build_timestamp`, so that `mediawiki-base`, `mediawiki` and `mediawiki-ci` of one run carry the same immutable timestamp tag).
 
 This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).
 
@@ -97,5 +97,5 @@ This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal ac
 MediaWiki 1.39 and PHP 8.1 are end of life; 1.39 is also built on PHP 8.2, which still receives security fixes. They are no longer built from `main`; the branch `1.39` contains the same tooling with a `matrix.json` that only holds 1.39 (PHP 8.2 as default, 8.1 as before). It publishes the same tags as before, including the immutable per-build tags and the labels.
 
 - Run it manually (*Actions → CI to Docker Hub → Run workflow*, branch `1.39`); scheduled runs only exist on the default branch, and pushes only trigger builds on `main`.
-- The downstream build is not triggered (`"downstream": false`).
+- The downstream build is triggered on the branch `maintenance/1.39` of `gesinn-it/docker-mediawiki` (`downstream_ref` in `matrix.json`).
 - Upstream `php:8.1-apache` does not receive updates any more; use the PHP 8.2 images to get PHP security fixes. The floating tags `1.39` and `1.39.x` point to PHP 8.2.
