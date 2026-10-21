@@ -190,7 +190,7 @@ jobs:
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
     needs: [plan, build]
-    if: needs.build.result == 'success'
+    if: needs.build.result == 'success' && !inputs.dry_run
     strategy:
       matrix:
         mediawiki_version: ${{ fromJSON(needs.plan.outputs.majors) }}
