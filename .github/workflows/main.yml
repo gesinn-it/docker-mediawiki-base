@@ -12,8 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        mediawiki_version: &mediawiki_versions ['1.46', '1.45', '1.44', '1.43']
-        php_version: ['8.5', '8.4', '8.3', '8.2']
+        mediawiki_version: &mediawiki_versions ['1.43']  # TEMP: ['1.46', '1.45', '1.44', '1.43']
+        php_version: ['8.2']  # TEMP: ['8.5', '8.4', '8.3', '8.2']
         exclude:
           - mediawiki_version: '1.46'
             php_version: '8.3'
@@ -135,7 +135,7 @@ jobs:
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.event_name == 'push' && needs.build.result == 'success'
+    if: false  # TEMP: github.event_name == 'push' && needs.build.result == 'success'
     strategy:
       matrix:
         mediawiki_version: *mediawiki_versions
