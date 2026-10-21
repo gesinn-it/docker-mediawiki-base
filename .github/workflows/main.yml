@@ -175,7 +175,7 @@ jobs:
       # Only reached after a successful push, i.e. exactly for the combinations that were rebuilt.
       - name: Trigger downstream build
         env:
-          GH_TOKEN: ${{ secrets.GESINN_API_TOKEN }}
+          GH_TOKEN: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
         run: |
           gh workflow run main.yml \
             --repo gesinn-it/docker-mediawiki \
