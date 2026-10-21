@@ -94,8 +94,9 @@ This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal ac
 
 ## Maintenance branch `1.39`
 
-MediaWiki 1.39 and PHP 8.1 are end of life; 1.39 is also built on PHP 8.2, which still receives security fixes. They are no longer built from `main`; the branch `1.39` contains the same tooling with a `matrix.json` that only holds 1.39 (PHP 8.2 as default, 8.1 as before). It publishes the same tags as before, including the immutable per-build tags and the labels.
+MediaWiki 1.39 and PHP 8.1 are end of life. 1.39 is no longer built from `main`; the branch `1.39` contains the same tooling with a `matrix.json` that only holds 1.39 on PHP 8.2 (which still receives security fixes). It publishes the same kind of tags as `main`, including the immutable per-build tags and the labels.
 
+- PHP 8.1 is intentionally not built any more. The existing `1.39-php8.1` and `1.39.x-php8.1` images stay as they are and are not overwritten.
+- The floating tags `1.39` and `1.39.x` point to PHP 8.2.
 - Run it manually (*Actions → CI to Docker Hub → Run workflow*, branch `1.39`); scheduled runs only exist on the default branch, and pushes only trigger builds on `main`.
 - The downstream build is triggered on the branch `maintenance/1.39` of `gesinn-it/docker-mediawiki` (`downstream_ref` in `matrix.json`).
-- Upstream `php:8.1-apache` does not receive updates any more; use the PHP 8.2 images to get PHP security fixes. The floating tags `1.39` and `1.39.x` point to PHP 8.2.

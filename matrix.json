@@ -1,4 +1,3 @@
 [
-{"mediawiki_version": "1.39", "php_version": "8.2", "php_default": "8.2", "downstream": true, "downstream_ref": "maintenance/1.39"},
-{"mediawiki_version": "1.39", "php_version": "8.1", "php_default": "8.2", "downstream": true, "downstream_ref": "maintenance/1.39"}
+{"mediawiki_version": "1.39", "php_version": "8.2", "php_default": "8.2", "downstream": true, "downstream_ref": "maintenance/1.39"}
 ]
