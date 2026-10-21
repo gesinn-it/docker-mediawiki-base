@@ -91,3 +91,11 @@ The build uses exactly the upstream digest that is recorded in the labels (`FROM
 After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version` and `php_version`).
 
 This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).
+
+## Maintenance branch `1.39`
+
+MediaWiki 1.39 and PHP 8.1 are end of life. They are no longer built from `main`; the branch `1.39` contains the same tooling with a `matrix.json` that only holds 1.39 / PHP 8.1. It publishes the same tags as before, including the immutable per-build tags and the labels.
+
+- Run it manually (*Actions → CI to Docker Hub → Run workflow*, branch `1.39`); scheduled runs only exist on the default branch, and pushes only trigger builds on `main`.
+- The downstream build is not triggered (`"downstream": false`).
+- Upstream `php:8.1-apache` does not receive updates any more, so rebuilds only pick up new Debian packages and new 1.39 releases.

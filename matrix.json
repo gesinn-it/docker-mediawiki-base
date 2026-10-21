@@ -1,13 +1,3 @@
 [
-{"mediawiki_version": "1.46", "php_version": "8.5", "php_default": "8.4", "downstream": true},
-{"mediawiki_version": "1.46", "php_version": "8.4", "php_default": "8.4", "downstream": true},
-{"mediawiki_version": "1.45", "php_version": "8.4", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.45", "php_version": "8.3", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.45", "php_version": "8.2", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.44", "php_version": "8.4", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.44", "php_version": "8.3", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.44", "php_version": "8.2", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.43", "php_version": "8.4", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.43", "php_version": "8.3", "php_default": "8.2", "downstream": true},
-{"mediawiki_version": "1.43", "php_version": "8.2", "php_default": "8.2", "downstream": true}
+{"mediawiki_version": "1.39", "php_version": "8.1", "php_default": "8.1", "downstream": false}
 ]
