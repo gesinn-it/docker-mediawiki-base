@@ -1,5 +1,5 @@
 # docker-mediawiki-base
-MediaWiki Docker base image in the style of the official MediaWiki image but with PHP variants. Released on [dockerhub](https://hub.docker.com/r/gesinn/mediawiki-base). Simply run the GitHub Actions workflow on new MediaWiki releases to generate images (dont't forget to trigger workflows on https://github.com/gesinn-it/docker-mediawiki afterwards).
+MediaWiki Docker base image in the style of the official MediaWiki image but with PHP variants. Released on [dockerhub](https://hub.docker.com/r/gesinn/mediawiki-base). Images are built and published automatically, see [Build triggers](#build-triggers).
 
 ## Image tagging scheme
 
@@ -24,3 +24,69 @@ gesinn/mediawiki-base:1.46-dev-a1b2c3d                 ← default php + default
 ```
 
 The `-dev-<sha7>` infix identifies the pre-release nature and the exact commit. No floating `1.46` tags are published for branch builds to avoid misleading consumers. Downstream repos (e.g. `gesinn-it/docker-mediawiki`) can reference pre-release images by setting `MEDIAWIKI_VERSION=1.46-dev-a1b2c3d` without any further changes.
+
+### Immutable per-build tags
+
+In addition to the tags above, every build gets one immutable tag with the UTC build time (all entries of one workflow run share the same timestamp):
+
+```
+gesinn/mediawiki-base:1.43.2-php8.2-apache-20261021T0933
+```
+
+The latest 8 of these tags per MediaWiki major version and PHP version are kept, older ones are deleted by the cleanup job.
+
+## Build triggers
+
+The workflow (`.github/workflows/main.yml`) runs on:
+
+| Trigger | Behaviour |
+|---|---|
+| push to `main` | rebuilds everything (the repository content changed) |
+| schedule, every 6 hours | change detection: rebuilds only entries that changed (see below) |
+| schedule, weekly (Sunday night) | forced rebuild of everything, picks up Debian updates for the packages installed by the template |
+| manual (`workflow_dispatch`) | change detection by default, see inputs below |
+
+The entries to build are listed in `matrix.json`.
+
+### Change detection
+
+`plan.sh` decides per entry whether a build is needed. An entry is rebuilt if
+
+- the digest of the upstream `php:<version>-apache` image differs from the one recorded in the published image (`org.opencontainers.image.base.digest`), or
+- the resolved MediaWiki version differs, i.e. a new release tag or a new commit on the `REL1_XX` branch of a pre-release. The fully qualified tag (`<version>-php<php>-apache`) does not exist yet in that case.
+
+If nothing changed, the run finishes without building or pushing anything; the log of the `plan` job states the reason for every entry.
+
+### Rebuilding manually
+
+Run the workflow via *Actions → CI to Docker Hub → Run workflow*. Inputs:
+
+- `force`: rebuild all selected entries even if nothing changed
+- `mediawiki_version`, `php_version`: restrict the run to one MediaWiki major version and/or PHP version (e.g. `1.43` / `8.2`); empty means all
+
+Runs never overlap (`concurrency` group), and a failing entry does not stop the others.
+
+### Image metadata
+
+Every image carries these labels (as image labels and as annotations on the multi-arch index, so they can be read without pulling the image):
+
+```
+docker buildx imagetools inspect gesinn/mediawiki-base:1.43-php8.2-apache --format '{{json .Manifest.Annotations}}'
+```
+
+| Label | Content |
+|---|---|
+| `org.opencontainers.image.base.name` | upstream image, e.g. `docker.io/library/php:8.2-apache` |
+| `org.opencontainers.image.base.digest` | digest of the upstream image the build used |
+| `org.opencontainers.image.created` | build time (UTC) |
+| `org.opencontainers.image.revision` | commit of this repository |
+| `org.opencontainers.image.version`, `it.gesinn.mediawiki.version` | MediaWiki version |
+| `it.gesinn.php.version` | effective PHP version, e.g. `8.2.34` |
+
+The build uses exactly the upstream digest that is recorded in the labels (`FROM php:8.2-apache@sha256:...`).
+
+### Downstream build
+
+After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version` and `php_version`).
+
+This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).
