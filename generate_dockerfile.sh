@@ -34,11 +34,11 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends $fetchDeps; \
 	\
-	curl -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz" -o mediawiki.tar.gz; \
-	curl -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz.sig" -o mediawiki.tar.gz.sig; \
+	curl --retry 5 --retry-delay 15 -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz" -o mediawiki.tar.gz; \
+	curl --retry 5 --retry-delay 15 -fSL "https://releases.wikimedia.org/mediawiki/${MEDIAWIKI_MAJOR_VERSION}/mediawiki-${MEDIAWIKI_VERSION}.tar.gz.sig" -o mediawiki.tar.gz.sig; \
 	export GNUPGHOME="$(mktemp -d)"; \
 	# Fetch and import keys from the official Wikimedia key bundle \
-	curl -fsSL https://www.mediawiki.org/keys/keys.txt | gpg --import;  \
+	curl --retry 5 --retry-delay 15 -fsSL https://www.mediawiki.org/keys/keys.txt | gpg --import;  \
 	gpg --batch --verify mediawiki.tar.gz.sig mediawiki.tar.gz; \
 	tar -x --strip-components=1 -f mediawiki.tar.gz; \
 	gpgconf --kill all; \
@@ -61,7 +61,7 @@ RUN set -eux; \\
 	apt-get update; \\
 	apt-get install -y --no-install-recommends unzip; \\
 	rm -rf /var/lib/apt/lists/*; \\
-	curl -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
+	curl --retry 5 --retry-delay 15 -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
 	tar -x --strip-components=1 -f mediawiki.tar.gz; \\
 	rm mediawiki.tar.gz; \\
 	/usr/local/bin/composer-build install --no-dev --no-scripts --prefer-dist; \\
