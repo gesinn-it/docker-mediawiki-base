@@ -46,7 +46,7 @@ The workflow (`.github/workflows/main.yml`) runs on:
 | schedule, weekly (Sunday night) | forced rebuild of everything, picks up Debian updates for the packages installed by the template |
 | manual (`workflow_dispatch`) | change detection by default, see inputs below |
 
-The entries to build are listed in `matrix.json` (including the default PHP version of each MediaWiki version and whether the downstream build is triggered).
+The entries to build are listed in `matrix.json` (including the default PHP version of each MediaWiki version, whether the downstream build is triggered and from which downstream branch).
 
 ### Change detection
 
@@ -88,6 +88,6 @@ The build uses exactly the upstream digest that is recorded in the labels (`FROM
 
 ### Downstream build
 
-After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version` and `php_version`).
+After a successful push of an entry, the workflow starts the build in [gesinn-it/docker-mediawiki](https://github.com/gesinn-it/docker-mediawiki) for exactly that MediaWiki/PHP combination (`workflow_dispatch` with `mediawiki_version`, `php_version` and the shared `build_timestamp`, so that `mediawiki-base`, `mediawiki` and `mediawiki-ci` of one run carry the same immutable timestamp tag).
 
 This requires the secret `DOWNSTREAM_DISPATCH_TOKEN`: a fine-grained personal access token with the repository permission *Actions: Read and write* on `gesinn-it/docker-mediawiki` only, available to this repository (repository or organisation secret).
