@@ -3,37 +3,80 @@ name: CI to Docker Hub
 on:
   push:
     branches: [ main ]
+  schedule:
+    # change detection: rebuilds only entries whose php base image or MediaWiki ref changed
+    - cron: '17 */6 * * *'
+    # forced rebuild of everything, picks up Debian updates for the packages installed by the template
+    - cron: '43 3 * * 0'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild all selected entries, even if nothing changed'
+        type: boolean
+        default: false
+      mediawiki_version:
+        description: 'Only this MediaWiki major version (e.g. 1.43); empty = all'
+        type: string
+        default: ''
+      php_version:
+        description: 'Only this PHP version (e.g. 8.2); empty = all'
+        type: string
+        default: ''
+
+# scheduled, manual and push runs must not race on the same tags
+concurrency:
+  group: docker-hub-publish
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPOSITORY: gesinn/mediawiki-base
 
 jobs:
 
-  build:
+  plan:
     runs-on: ubuntu-24.04
-
-    strategy:
-      matrix:
-        mediawiki_version: &mediawiki_versions ['1.46', '1.45', '1.44', '1.43']
-        php_version: ['8.5', '8.4', '8.3', '8.2']
-        exclude:
-          - mediawiki_version: '1.46'
-            php_version: '8.3'
-          - mediawiki_version: '1.46'
-            php_version: '8.2'
-          - mediawiki_version: '1.45'
-            php_version: '8.5'
-          - mediawiki_version: '1.44'
-            php_version: '8.5'
-          - mediawiki_version: '1.43'
-            php_version: '8.5'
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      majors: ${{ steps.plan.outputs.majors }}
+      build_timestamp: ${{ steps.plan.outputs.build_timestamp }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Resolve upstream php image
+      - name: Plan
+        id: plan
+        env:
+          # the weekly schedule is the forced rebuild
+          FORCE: ${{ (github.event_name == 'schedule' && github.event.schedule == '43 3 * * 0') || inputs.force == true }}
+          ALWAYS_BUILD: ${{ github.event_name == 'push' }}
+          ONLY_MEDIAWIKI: ${{ inputs.mediawiki_version }}
+          ONLY_PHP: ${{ inputs.php_version }}
         run: |
-          source ./helpers.sh
-          digest="$(php_base_digest "${{matrix.php_version}}")"
-          echo "PHP_BASE_DIGEST=${digest}" >> $GITHUB_ENV
+          matrix="$(./plan.sh)"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          echo "majors=$(jq -c '[.[].mediawiki_version] | unique' matrix.json)" >> "$GITHUB_OUTPUT"
+          echo "build_timestamp=$(date -u +%Y%m%dT%H%M)" >> "$GITHUB_OUTPUT"
+          if [[ "$matrix" == "[]" ]]; then
+            echo "Nothing to rebuild: php base images and MediaWiki refs are unchanged." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.matrix != '[]'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: build (${{ matrix.mediawiki_version }}, ${{ matrix.php_version }})
+    env:
+      PHP_BASE_DIGEST: ${{ matrix.php_base_digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Reason
+        run: echo "Rebuilding because ${{ matrix.reason }}"
 
       - name: Generate dockerfile
         run: |
@@ -63,10 +106,10 @@ jobs:
       - name: Cache Docker layers
         uses: actions/cache@v6
         with:
-          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/apache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          path: /tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{ matrix.php_version }}/apache
+          key: ${{ runner.os }}-buildx-${{ matrix.mediawiki_version }}-${{ matrix.php_version }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-buildx-${{ matrix.mediawiki_version }}-${{ matrix.php_version }}-
 
 
       - uses: docker/login-action@v4
@@ -83,9 +126,6 @@ jobs:
       - name: Set image metadata
         run: echo "IMAGE_CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
 
-      - name: set imageRepository
-        run: echo "imageRepository=gesinn/mediawiki-base" >> $GITHUB_ENV
-
       - name: generate tags for image
         run: |
           source ./helpers.sh
@@ -93,7 +133,7 @@ jobs:
           if [[ "${{ matrix.mediawiki_version }}" == "1.46" ]]; then
             php_default="8.4"
           fi
-          tags="$(generate_tags "${{ env.imageRepository }}" "${{ env.MEDIAWIKI_FULL_VERSION }}" "${{ matrix.mediawiki_version }}" "${{ matrix.php_version }}" "${php_default}" "${{ env.MEDIAWIKI_REF_TYPE }}")"
+          tags="$(generate_tags "${IMAGE_REPOSITORY}" "${{ env.MEDIAWIKI_FULL_VERSION }}" "${{ matrix.mediawiki_version }}" "${{ matrix.php_version }}" "${php_default}" "${{ env.MEDIAWIKI_REF_TYPE }}" "${{ needs.plan.outputs.build_timestamp }}")"
           echo "TAGS=${tags}" >> $GITHUB_ENV
 
       - name: Build and push
@@ -132,13 +172,25 @@ jobs:
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
 
+      # Only reached after a successful push, i.e. exactly for the combinations that were rebuilt.
+      - name: Trigger downstream build
+        env:
+          GH_TOKEN: ${{ secrets.GESINN_API_TOKEN }}
+        run: |
+          gh workflow run main.yml \
+            --repo gesinn-it/docker-mediawiki \
+            --ref main \
+            -f mediawiki_version=${{ matrix.mediawiki_version }} \
+            -f php_version=${{ matrix.php_version }}
+
+
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
-    needs: build
-    if: github.event_name == 'push' && needs.build.result == 'success'
+    needs: [plan, build]
+    if: needs.build.result == 'success'
     strategy:
       matrix:
-        mediawiki_version: *mediawiki_versions
+        mediawiki_version: ${{ fromJSON(needs.plan.outputs.majors) }}
     env:
       IMAGE_NAMESPACE: gesinn
       IMAGE_REPOSITORY: mediawiki-base
@@ -179,6 +231,24 @@ jobs:
           fi
 
           major="${{ matrix.mediawiki_version }}"
+
+          # Immutable per-build tags (<version>-php<v>-apache-YYYYMMDDTHHMM): keep the latest 8 per MediaWiki major + PHP version.
+          # Runs first because the dev cleanup below exits early when there is nothing to do.
+          mapfile -t old_build_tags < <(
+            awk -F '\t' -v m="$major" -v d8='[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' -v d4='[0-9][0-9][0-9][0-9]' '
+              match($1, "^" m "[.-].*-php[0-9.]+-apache-" d8 "T" d4 "$") {
+                tag = $1
+                ts = substr(tag, length(tag) - 12)
+                prefix = substr(tag, 1, length(tag) - 14)
+                sub(/^.*-php/, "", prefix)
+                print prefix "\t" ts "\t" tag
+              }
+            ' "$tags_file" | sort -t $'\t' -k1,1 -k2,2r | awk -F '\t' '{ if (++n[$1] > 8) print $3 }'
+          )
+          for tag_name in "${old_build_tags[@]}"; do
+            echo "Deleting ${IMAGE_NAMESPACE}/${IMAGE_REPOSITORY}:${tag_name} (retention: latest 8 build tags)"
+            curl -fsSL -X DELETE -H "Authorization: JWT ${hub_jwt}" "${hub_repo}/tags/${tag_name}/" > /dev/null || true
+          done
           ref_info="$(mediawiki_ref "$major")"
           IFS=':' read -r ref_type _ _ <<< "$ref_info"
 
