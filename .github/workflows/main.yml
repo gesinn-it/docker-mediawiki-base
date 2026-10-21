@@ -15,7 +15,7 @@ on:
         type: boolean
         default: false
       dry_run:
-        description: 'Build only: do not push images and do not trigger the downstream build'
+        description: 'Build amd64 only: do not push images and do not trigger the downstream build'
         type: boolean
         default: false
       mediawiki_version:
@@ -99,6 +99,7 @@ jobs:
           fi
 
       - name: Set up QEMU
+        if: ${{ !inputs.dry_run }}
         uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
@@ -150,7 +151,8 @@ jobs:
           tags: ${{ env.TAGS }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
-          platforms: linux/amd64,linux/arm64
+          # a dry run only builds amd64 (no QEMU emulation), which is much faster
+          platforms: ${{ inputs.dry_run && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
           labels: |
             org.opencontainers.image.base.name=docker.io/library/php:${{ matrix.php_version }}-apache
             org.opencontainers.image.base.digest=${{ env.PHP_BASE_DIGEST }}
