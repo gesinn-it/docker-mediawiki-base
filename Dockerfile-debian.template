@@ -31,8 +31,17 @@ RUN set -eux; \
 		mysqli \
 	; \
 	\
-	pecl install APCu-%%APCU_VERSION%%; \
-	pecl install ast-%%AST_VERSION%%; \
+	# pecl.php.net is occasionally unavailable (HTTP 500), so retry
+	pecl_install() { \
+		for attempt in 1 2 3 4 5; do \
+			pecl install "$@" && return 0; \
+			echo "pecl install $* failed (attempt $attempt), retrying"; \
+			sleep $((attempt * 20)); \
+		done; \
+		return 1; \
+	}; \
+	pecl_install APCu-%%APCU_VERSION%%; \
+	pecl_install ast-%%AST_VERSION%%; \
 	docker-php-ext-enable \
 		apcu \
 		ast \
