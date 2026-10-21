@@ -29,9 +29,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Resolve upstream php image
+        run: |
+          source ./helpers.sh
+          digest="$(php_base_digest "${{matrix.php_version}}")"
+          echo "PHP_BASE_DIGEST=${digest}" >> $GITHUB_ENV
+
       - name: Generate dockerfile
         run: |
-          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}}
+          ./generate_dockerfile.sh ${{matrix.mediawiki_version}} ${{matrix.php_version}} "${PHP_BASE_DIGEST}"
 
       - name: Retrieve MediaWiki version
         run: |
@@ -69,6 +75,14 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
 
+      - name: Determine effective PHP version
+        run: |
+          php_full="$(docker run --rm "php:${{ matrix.php_version }}-apache@${PHP_BASE_DIGEST}" php -r 'echo PHP_VERSION;')"
+          echo "PHP_FULL_VERSION=${php_full}" >> $GITHUB_ENV
+
+      - name: Set image metadata
+        run: echo "IMAGE_CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
       - name: set imageRepository
         run: echo "imageRepository=gesinn/mediawiki-base" >> $GITHUB_ENV
 
@@ -90,14 +104,30 @@ jobs:
           file: ./Dockerfile
           network: host
           allow: network.host
-          build-args: |
-             CACHEBUST=${{ steps.date.outputs.date }}
+          pull: true
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ env.TAGS }}
           cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
           cache-to: type=local,dest=/tmp/.buildx-cache/${{ matrix.mediawiki_version }}/php-${{matrix.php_version}}/apache
           platforms: linux/amd64,linux/arm64
+          labels: |
+            org.opencontainers.image.base.name=docker.io/library/php:${{ matrix.php_version }}-apache
+            org.opencontainers.image.base.digest=${{ env.PHP_BASE_DIGEST }}
+            org.opencontainers.image.created=${{ env.IMAGE_CREATED }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+          annotations: |
+            index:org.opencontainers.image.base.name=docker.io/library/php:${{ matrix.php_version }}-apache
+            index:org.opencontainers.image.base.digest=${{ env.PHP_BASE_DIGEST }}
+            index:org.opencontainers.image.created=${{ env.IMAGE_CREATED }}
+            index:org.opencontainers.image.revision=${{ github.sha }}
+            index:org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
+            index:it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            index:it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

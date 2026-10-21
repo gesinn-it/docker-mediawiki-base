@@ -1,4 +1,4 @@
-FROM php:%%PHP_VERSION%%-%%VARIANT%%
+FROM php:%%PHP_VERSION%%-%%VARIANT%%%%PHP_DIGEST%%
 
 # System dependencies
 RUN set -eux; \

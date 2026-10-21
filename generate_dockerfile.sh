@@ -5,14 +5,15 @@ cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
 
 source ./helpers.sh
 
-if [ "$#" -ne 2 ]; then
-  echo "not enough arguments provided"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+  echo "usage: $0 <mediawiki_version> <php_version> [<php_base_image_digest>]" >&2
   exit 1
 fi
 
 github_mw_version="$1"
 github_php_version="$2"
 github_image_variant='apache'
+github_php_digest="${3:-}"  # optional: pins the upstream php image
 
 mw_ref="$(mediawiki_ref "$github_mw_version")"
 mw_type="${mw_ref%%:*}"
@@ -79,10 +80,17 @@ extras="${variantExtras[$github_image_variant]}"
 cmd="${variantCmds[$github_image_variant]}"
 base="${variantBases[$github_image_variant]}"
 
+# pins the upstream php image to the digest that is recorded in the image labels
+php_digest_suffix=''
+if [[ -n "$github_php_digest" ]]; then
+	php_digest_suffix="@${github_php_digest}"
+fi
+
 sed -r \
 	-e 's!%%MEDIAWIKI_VERSION%%!'"$mediawikiVersion"'!g' \
 	-e 's!%%MEDIAWIKI_MAJOR_VERSION%%!'"$github_mw_version"'!g' \
 	-e 's!%%PHP_VERSION%%!'"$github_php_version"'!g' \
+	-e 's!%%PHP_DIGEST%%!'"$php_digest_suffix"'!g' \
 	-e 's!%%VARIANT%%!'"$github_image_variant"'!g' \
 	-e 's!%%APCU_VERSION%%!'"${peclVersions[APCu]}"'!g' \
 	-e 's!%%AST_VERSION%%!'"${peclVersions[ast]}"'!g' \

@@ -35,6 +35,13 @@ function mediawiki_ref() {
 	exit 1
 }
 
+# Index digest of the upstream php:<version>-<variant> image, e.g. sha256:1650dc...
+function php_base_digest() {
+	local phpVersion="$1"
+	local variant="${2:-apache}"
+	docker buildx imagetools inspect "php:${phpVersion}-${variant}" --format '{{.Manifest.Digest}}'
+}
+
 function generate_tags () {
 	local imageRepository=$1
 	local mediawikiFullVersion=$2
