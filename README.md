@@ -46,7 +46,7 @@ The workflow (`.github/workflows/main.yml`) runs on:
 | schedule, weekly (Sunday night) | forced rebuild of everything, picks up Debian updates for the packages installed by the template |
 | manual (`workflow_dispatch`) | change detection by default, see inputs below |
 
-The entries to build are listed in `matrix.json`.
+The entries to build are listed in `matrix.json` (including the default PHP version of each MediaWiki version and whether the downstream build is triggered).
 
 ### Change detection
 
@@ -62,6 +62,7 @@ If nothing changed, the run finishes without building or pushing anything; the l
 Run the workflow via *Actions → CI to Docker Hub → Run workflow*. Inputs:
 
 - `force`: rebuild all selected entries even if nothing changed
+- `dry_run`: build only, push nothing and do not trigger the downstream build
 - `mediawiki_version`, `php_version`: restrict the run to one MediaWiki major version and/or PHP version (e.g. `1.43` / `8.2`); empty means all
 
 Runs never overlap (`concurrency` group), and a failing entry does not stop the others.

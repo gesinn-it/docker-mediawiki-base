@@ -23,6 +23,8 @@ plan='[]'
 while read -r entry; do
 	mw="$(jq -r .mediawiki_version <<< "$entry")"
 	php="$(jq -r .php_version <<< "$entry")"
+	php_default="$(jq -r .php_default <<< "$entry")"
+	downstream="$(jq -r '.downstream // false' <<< "$entry")"
 	label="MediaWiki ${mw} / PHP ${php}"
 
 	if [[ -n "$only_mw" && "$only_mw" != "$mw" ]] || [[ -n "$only_php" && "$only_php" != "$php" ]]; then
@@ -61,7 +63,8 @@ while read -r entry; do
 
 	echo "rebuild ${label}: ${reason}" >&2
 	plan="$(jq -c --arg mw "$mw" --arg php "$php" --arg digest "$base_digest" --arg reason "$reason" \
-		'. + [{mediawiki_version:$mw, php_version:$php, php_base_digest:$digest, reason:$reason}]' <<< "$plan")"
+		--arg php_default "$php_default" --argjson downstream "$downstream" \
+		'. + [{mediawiki_version:$mw, php_version:$php, php_default:$php_default, downstream:$downstream, php_base_digest:$digest, reason:$reason}]' <<< "$plan")"
 done < <(jq -c '.[]' matrix.json)
 
 echo "$plan"
