@@ -137,10 +137,17 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
 
-      - name: Determine effective PHP version
+      - name: Determine effective versions
         run: |
           php_full="$(docker run --rm "php:${{ matrix.php_version }}-apache@${PHP_BASE_DIGEST}" php -r 'echo PHP_VERSION;')"
           echo "PHP_FULL_VERSION=${php_full}" >> $GITHUB_ENV
+          os_full="$(docker run --rm "php:${{ matrix.php_version }}-apache@${PHP_BASE_DIGEST}" sh -c '. /etc/os-release; echo "${ID} $(cat /etc/debian_version) (${VERSION_CODENAME})"')"
+          echo "OS_FULL_VERSION=${os_full}" >> $GITHUB_ENV
+          apache_full="$(docker run --rm "php:${{ matrix.php_version }}-apache@${PHP_BASE_DIGEST}" dpkg-query -W -f='${Version}' apache2)"
+          echo "APACHE_FULL_VERSION=${apache_full}" >> $GITHUB_ENV
+          # the PECL extensions are pinned in the generated Dockerfile
+          echo "APCU_FULL_VERSION=$(sed -n 's/.*pecl_install APCu-\([0-9.]*\);.*/\1/p' Dockerfile)" >> $GITHUB_ENV
+          echo "AST_FULL_VERSION=$(sed -n 's/.*pecl_install ast-\([0-9.]*\);.*/\1/p' Dockerfile)" >> $GITHUB_ENV
 
       - name: Set image metadata
         run: echo "IMAGE_CREATED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
@@ -175,6 +182,15 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            it.gesinn.os.version=${{ env.OS_FULL_VERSION }}
+            org.opencontainers.image.title=mediawiki-base
+            org.opencontainers.image.description=MediaWiki base image with PHP variants
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.url=https://hub.docker.com/r/gesinn/mediawiki-base
+            org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}#readme
+            it.gesinn.apache.version=${{ env.APACHE_FULL_VERSION }}
+            it.gesinn.apcu.version=${{ env.APCU_FULL_VERSION }}
+            it.gesinn.ast.version=${{ env.AST_FULL_VERSION }}
             it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
           annotations: |
             index:org.opencontainers.image.base.name=docker.io/library/php:${{ matrix.php_version }}-apache
@@ -183,6 +199,15 @@ jobs:
             index:org.opencontainers.image.revision=${{ github.sha }}
             index:org.opencontainers.image.version=${{ env.MEDIAWIKI_FULL_VERSION }}
             index:it.gesinn.php.version=${{ env.PHP_FULL_VERSION }}
+            index:it.gesinn.os.version=${{ env.OS_FULL_VERSION }}
+            index:org.opencontainers.image.title=mediawiki-base
+            index:org.opencontainers.image.description=MediaWiki base image with PHP variants
+            index:org.opencontainers.image.licenses=MIT
+            index:org.opencontainers.image.url=https://hub.docker.com/r/gesinn/mediawiki-base
+            index:org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}#readme
+            index:it.gesinn.apache.version=${{ env.APACHE_FULL_VERSION }}
+            index:it.gesinn.apcu.version=${{ env.APCU_FULL_VERSION }}
+            index:it.gesinn.ast.version=${{ env.AST_FULL_VERSION }}
             index:it.gesinn.mediawiki.version=${{ env.MEDIAWIKI_FULL_VERSION }}
 
       - name: Image digest
@@ -207,6 +232,40 @@ jobs:
           PLAN: ${{ needs.plan.outputs.matrix }}
           BUILD_TIMESTAMP: ${{ needs.plan.outputs.build_timestamp }}
         run: ./trigger_downstream.sh "$PLAN" "$BUILD_TIMESTAMP"
+
+  # The version table in the README is generated from the labels of the published images.
+  # Only on main: a manual run from another branch must not commit there.
+  update-readme:
+    needs: [plan, build]
+    if: >-
+      !cancelled() && !inputs.dry_run && github.ref == 'refs/heads/main' &&
+      needs.plan.outputs.matrix != '[]' && needs.build.result == 'success'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Update version table
+        run: ./update_readme_table.sh
+
+      - name: Commit
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "README version table is up to date" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: update version table [skip ci]" README.md
+          git pull --rebase
+          git push
 
   cleanup-dev-tags:
     runs-on: ubuntu-24.04
