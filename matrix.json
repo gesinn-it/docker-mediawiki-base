@@ -1,7 +1,5 @@
 [
 {"mediawiki_version": "1.46", "php_version": "8.5", "php_default": "8.4", "downstream": true, "downstream_ref": "main"},
 {"mediawiki_version": "1.46", "php_version": "8.4", "php_default": "8.4", "downstream": true, "downstream_ref": "main"},
-{"mediawiki_version": "1.43", "php_version": "8.4", "php_default": "8.2", "downstream": true, "downstream_ref": "main"},
-{"mediawiki_version": "1.43", "php_version": "8.3", "php_default": "8.2", "downstream": true, "downstream_ref": "main"},
-{"mediawiki_version": "1.43", "php_version": "8.2", "php_default": "8.2", "downstream": true, "downstream_ref": "main"}
+{"mediawiki_version": "1.43", "php_version": "8.3", "php_default": "8.3", "downstream": true, "downstream_ref": "main"}
 ]
