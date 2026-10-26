@@ -11,9 +11,6 @@ MediaWiki Docker base image in the style of the official MediaWiki image but wit
 | 1.45.6 | 8.4.27 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
 | 1.45.6 | 8.3.36 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
 | 1.45.6 | 8.2.35 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
-| 1.44.6 | 8.4.27 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
-| 1.44.6 | 8.3.36 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
-| 1.44.6 | 8.2.35 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
 | 1.43.11 | 8.4.27 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
 | 1.43.11 | 8.3.36 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
 | 1.43.11 | 8.2.35 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.27 |
