@@ -23,7 +23,7 @@ function mediawiki_ref() {
 	# Stage 2 – Branch fallback
 	local branch="REL$(echo "$major_version" | tr '.' '_')"
 	local sha
-	sha=$(git ls-remote --heads https://github.com/wikimedia/mediawiki.git "$branch" \
+	sha=$(git ls-remote --heads https://github.com/wikimedia/mediawiki.git "refs/heads/${branch}" \
 		| cut -f1)
 
 	if [[ -n "$sha" ]]; then
