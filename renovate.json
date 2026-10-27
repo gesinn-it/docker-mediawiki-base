@@ -6,7 +6,7 @@
 	"customManagers": [
 		{
 			"customType": "regex",
-			"description": "Track the PECL extension versions (APCu, ast) pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. Upstream tags carry a 'v' prefix that the pinned values omit.",
+			"description": "Track the PECL extension version of APCu pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. The upstream tags carry a 'v' prefix that the pinned value omits.",
 			"managerFilePatterns": ["/^helpers\\.sh$/"],
 			"matchStrings": [
 				"\\[APCu\\]=\"(?<currentValue>[0-9.]+)\""
@@ -18,7 +18,7 @@
 		},
 		{
 			"customType": "regex",
-			"description": "Track the PECL extension versions (APCu, ast) pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. Upstream tags carry a 'v' prefix that the pinned values omit.",
+			"description": "Track the PECL extension version of ast pinned in helpers.sh' peclVersions array, which Renovate's built-in managers do not detect. The upstream tags carry a 'v' prefix that the pinned value omits.",
 			"managerFilePatterns": ["/^helpers\\.sh$/"],
 			"matchStrings": [
 				"\\[ast\\]=\"(?<currentValue>[0-9.]+)\""
