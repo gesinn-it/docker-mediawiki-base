@@ -6,7 +6,7 @@ MediaWiki Docker base image in the style of the official MediaWiki image but wit
 <!-- versions:start -->
 | MediaWiki | PHP | Operating system | Apache | APCu |
 |---|---|---|---|---|
-| 1.47-dev-d2bb127 (pre-release) | 8.5.12 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.28 |
+| 1.47-dev-b4f1332 (pre-release) | 8.5.12 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.28 |
 | 1.46.2 | 8.5.12 | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.28 |
 | 1.46.2 | 8.4.27 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.28 |
 | 1.43.11 | 8.3.36 (default) | Debian 13.7 (trixie) | 2.4.69-1~deb13u1 | 5.1.28 |
