@@ -55,15 +55,21 @@ elif [[ "$mw_type" == "branch" ]]; then
   cat > "$tmpSetup" << SETUP
 # MediaWiki setup (branch: ${mw_branch}@${mw_sha:0:7})
 # GPG verification is intentionally skipped – no signed artifact exists for pre-release branches
-# vendor/ is not included in GitHub archive tarballs; composer resolves dependencies from composer.lock
+# vendor/ is not included in the git tree; composer resolves dependencies from composer.lock
+# GitHub archive tarballs omit git submodules (skins and bundled extensions), so the tree is fetched via git instead
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer-build
 RUN set -eux; \\
 	apt-get update; \\
-	apt-get install -y --no-install-recommends unzip; \\
+	apt-get install -y --no-install-recommends unzip git; \\
 	rm -rf /var/lib/apt/lists/*; \\
-	curl --retry 5 --retry-delay 15 -fSL "https://github.com/wikimedia/mediawiki/archive/${mw_sha}.tar.gz" -o mediawiki.tar.gz; \\
-	tar -x --strip-components=1 -f mediawiki.tar.gz; \\
-	rm mediawiki.tar.gz; \\
+	git config --global --add safe.directory '*'; \\
+	git init -q .; \\
+	git remote add origin https://github.com/wikimedia/mediawiki.git; \\
+	git fetch --depth 1 origin ${mw_sha}; \\
+	git checkout -q FETCH_HEAD; \\
+	git submodule update --init --depth 1 --recommend-shallow; \\
+	find . -name .git -prune -exec rm -rf {} +; \\
+	rm -f /root/.gitconfig; \\
 	/usr/local/bin/composer-build install --no-dev --no-scripts --prefer-dist; \\
 	rm /usr/local/bin/composer-build; \\
 	chown -R www-data:www-data extensions skins cache images
