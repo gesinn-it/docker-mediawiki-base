@@ -12,7 +12,7 @@ function mediawiki_ref() {
 	tag=$(git ls-remote --sort=version:refname --tags https://github.com/wikimedia/mediawiki.git \
 		| cut -d/ -f3 \
 		| tr -d '^{}' \
-		| grep -E "^${major_version}\." \
+		| grep -E "^${major_version}\.[0-9]+$" \
 		| tail -1)
 
 	if [[ -n "$tag" ]]; then
