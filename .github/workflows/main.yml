@@ -46,7 +46,7 @@ env:
 jobs:
 
   plan:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       majors: ${{ steps.plan.outputs.majors }}
@@ -81,7 +81,7 @@ jobs:
   build:
     needs: plan
     if: needs.plan.outputs.matrix != '[]' && !inputs.downstream_only
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -219,7 +219,7 @@ jobs:
     if: >-
       !cancelled() && !inputs.dry_run && needs.plan.outputs.matrix != '[]' &&
       (needs.build.result == 'success' || needs.build.result == 'failure' || needs.build.result == 'skipped')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -240,7 +240,7 @@ jobs:
     if: >-
       !cancelled() && !inputs.dry_run && github.ref == 'refs/heads/main' &&
       needs.plan.outputs.matrix != '[]' && needs.build.result == 'success'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     steps:
@@ -268,7 +268,7 @@ jobs:
           git push
 
   cleanup-dev-tags:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: [plan, build]
     if: needs.build.result == 'success' && !inputs.dry_run
     strategy:
